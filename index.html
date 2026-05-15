@@ -1,0 +1,1911 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prompt Engineering for QA Engineers — Workshop</title>
+<style>
+  /* ---------- Base ---------- */
+  :root {
+    --bg: #0d1117;
+    --bg-elev: #161b22;
+    --bg-elev-2: #1f262e;
+    --border: #30363d;
+    --text: #e6edf3;
+    --text-dim: #9da7b1;
+    --accent: #4fc3f7;
+    --accent-2: #ffb74d;
+    --good: #81c784;
+    --bad: #e57373;
+    --code-bg: #0a0e13;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 80px; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    font-size: 16px;
+  }
+  code, pre, kbd { font-family: "SF Mono", Menlo, Monaco, Consolas, "Courier New", monospace; }
+  a { color: var(--accent-2); }
+
+  /* ---------- Progress bar ---------- */
+  #progress {
+    position: fixed;
+    top: 0; left: 0;
+    height: 3px;
+    width: 0%;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    z-index: 100;
+    transition: width 0.1s ease;
+  }
+
+  /* ---------- Top nav ---------- */
+  nav.top {
+    position: sticky;
+    top: 0;
+    background: rgba(13, 17, 23, 0.92);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+    z-index: 50;
+    padding: 12px 24px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 18px;
+    align-items: center;
+  }
+  nav.top .brand {
+    font-weight: 700;
+    color: var(--accent);
+    margin-right: auto;
+    font-size: 0.95rem;
+  }
+  nav.top a {
+    color: var(--text-dim);
+    text-decoration: none;
+    font-size: 0.85rem;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: all 0.15s ease;
+  }
+  nav.top a:hover { color: var(--text); background: var(--bg-elev); }
+  nav.top a.active { color: var(--accent); background: rgba(79, 195, 247, 0.1); }
+
+  /* ---------- Layout ---------- */
+  main {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 40px 24px 120px;
+  }
+  section {
+    padding: 56px 0 24px;
+    border-bottom: 1px solid var(--border);
+  }
+  section:last-of-type { border-bottom: none; }
+  section .num {
+    display: inline-block;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    background: rgba(79, 195, 247, 0.1);
+    padding: 4px 10px;
+    border-radius: 999px;
+    margin-bottom: 12px;
+  }
+  h1 {
+    font-size: 2.4rem;
+    line-height: 1.15;
+    margin: 0 0 12px;
+    letter-spacing: -0.02em;
+  }
+  h2 {
+    font-size: 1.8rem;
+    margin: 0 0 12px;
+    letter-spacing: -0.01em;
+    color: var(--accent);
+  }
+  h3 { font-size: 1.15rem; margin: 24px 0 10px; color: var(--accent-2); }
+  p { margin: 0 0 14px; }
+  .lead { font-size: 1.1rem; color: var(--text-dim); }
+
+  /* ---------- Hero ---------- */
+  .hero {
+    text-align: center;
+    padding: 72px 0 48px;
+  }
+  .hero h1 { font-size: 3rem; }
+  .hero h1 span { color: var(--accent); }
+  .hero .meta {
+    display: inline-flex;
+    gap: 16px;
+    margin-top: 24px;
+    color: var(--text-dim);
+    font-size: 0.9rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .hero .meta span { display: inline-flex; align-items: center; gap: 6px; }
+
+  /* ---------- Cards / grids ---------- */
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  @media (max-width: 720px) { .grid-2 { grid-template-columns: 1fr; } }
+  .card {
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 20px;
+  }
+  .card.good { border-left: 4px solid var(--good); }
+  .card.bad  { border-left: 4px solid var(--bad); }
+  .card .title {
+    font-weight: 700;
+    margin-bottom: 8px;
+    font-size: 0.95rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .card.good .title { color: var(--good); }
+  .card.bad  .title { color: var(--bad); }
+  .card ul { margin: 0; padding-left: 18px; }
+  .card li { margin-bottom: 4px; }
+
+  /* ---------- Anatomy blocks ---------- */
+  .anatomy {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 10px;
+    margin: 20px 0;
+  }
+  @media (max-width: 900px) { .anatomy { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 560px) { .anatomy { grid-template-columns: repeat(2, 1fr); } }
+  .anatomy .block {
+    background: var(--bg-elev);
+    border: 2px solid var(--accent);
+    border-radius: 10px;
+    padding: 14px 12px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .anatomy .block:hover {
+    background: rgba(79, 195, 247, 0.12);
+    transform: translateY(-2px);
+  }
+  .anatomy .block .n {
+    display: block;
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--accent);
+  }
+  .anatomy .block .label { font-weight: 700; font-size: 0.85rem; }
+  .anatomy .block .desc { font-size: 0.75rem; color: var(--text-dim); margin-top: 4px; }
+
+  .source-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(79, 195, 247, 0.08);
+    border: 1px solid rgba(79, 195, 247, 0.3);
+    color: var(--accent);
+    font-size: 0.72rem;
+    padding: 4px 10px;
+    border-radius: 999px;
+    margin: 0 0 8px;
+    font-weight: 500;
+  }
+  .source-badge::before {
+    content: "📘";
+    font-size: 0.85rem;
+  }
+
+  /* ---------- Code blocks ---------- */
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 18px;
+    overflow-x: auto;
+    margin: 12px 0;
+    font-size: 0.85rem;
+    line-height: 1.55;
+  }
+  code.inline {
+    background: var(--bg-elev-2);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.88em;
+  }
+
+  /* ---------- Principles list ---------- */
+  ol.principles { padding-left: 0; counter-reset: princ; list-style: none; }
+  ol.principles li {
+    counter-increment: princ;
+    position: relative;
+    padding: 14px 16px 14px 56px;
+    margin-bottom: 10px;
+    background: var(--bg-elev);
+    border-radius: 8px;
+    border-left: 3px solid var(--accent);
+  }
+  ol.principles li::before {
+    content: counter(princ);
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: var(--bg);
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  ol.principles b { color: var(--accent); }
+
+  /* ---------- Technique grid ---------- */
+  .tech-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+  @media (max-width: 720px) { .tech-grid { grid-template-columns: 1fr; } }
+  .tech {
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent-2);
+    border-radius: 8px;
+    padding: 14px 16px;
+  }
+  .tech b { color: var(--accent-2); display: block; margin-bottom: 4px; }
+  .tech .ex { color: var(--text-dim); font-size: 0.88em; font-style: italic; margin-top: 6px; }
+
+  /* ---------- Use cases table ---------- */
+  table.uc {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0;
+    font-size: 0.92rem;
+  }
+  table.uc th, table.uc td {
+    padding: 12px 14px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  table.uc th { color: var(--accent); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; }
+  table.uc tbody tr:hover { background: var(--bg-elev); }
+
+  /* ---------- Tabs (vague vs engineered) ---------- */
+  .tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 14px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 8px;
+  }
+  .tabs button {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-family: inherit;
+    transition: all 0.15s ease;
+  }
+  .tabs button:hover { color: var(--text); }
+  .tabs button.active {
+    background: var(--accent);
+    color: var(--bg);
+    border-color: var(--accent);
+    font-weight: 600;
+  }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* ---------- Pitfalls ---------- */
+  .pitfall {
+    display: flex;
+    gap: 14px;
+    padding: 14px 18px;
+    margin-bottom: 10px;
+    background: rgba(229, 115, 115, 0.06);
+    border-left: 3px solid var(--bad);
+    border-radius: 0 6px 6px 0;
+  }
+  .pitfall .icon { font-size: 1.4rem; flex-shrink: 0; }
+  .pitfall b { color: var(--bad); }
+  .pitfall .fix { color: var(--text-dim); font-size: 0.92em; margin-top: 4px; }
+
+  /* ---------- Builder ---------- */
+  .builder {
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+  }
+  .builder label {
+    display: block;
+    margin-top: 14px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .builder label:first-child { margin-top: 0; }
+  .builder input, .builder textarea, .builder select {
+    width: 100%;
+    margin-top: 6px;
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 12px;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 0.95rem;
+  }
+  .builder input:focus, .builder textarea:focus, .builder select:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  .builder textarea { min-height: 60px; resize: vertical; }
+  .builder .output-wrap {
+    margin-top: 18px;
+    position: relative;
+  }
+  .builder .output {
+    background: var(--code-bg);
+    border: 1px solid var(--accent);
+    border-radius: 6px;
+    padding: 14px 16px;
+    white-space: pre-wrap;
+    font-family: "SF Mono", Menlo, Monaco, monospace;
+    font-size: 0.88rem;
+    color: #b3e5fc;
+    min-height: 80px;
+  }
+  .builder .copy-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: var(--bg-elev-2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 4px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.75rem;
+    font-family: inherit;
+  }
+  .builder .copy-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ---------- Exercise ---------- */
+  details.exercise {
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin-bottom: 10px;
+  }
+  details.exercise summary {
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--accent);
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  details.exercise summary::before {
+    content: "▶";
+    font-size: 0.7em;
+    transition: transform 0.2s ease;
+  }
+  details.exercise[open] summary::before { transform: rotate(90deg); }
+  details.exercise .ans { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); color: var(--text-dim); }
+
+  /* ---------- Checklist ---------- */
+  ul.checklist { list-style: none; padding: 0; }
+  ul.checklist li {
+    padding: 10px 0 10px 32px;
+    position: relative;
+    border-bottom: 1px solid var(--border);
+  }
+  ul.checklist li:last-child { border-bottom: none; }
+  ul.checklist li::before {
+    content: "✓";
+    position: absolute;
+    left: 6px;
+    top: 10px;
+    color: var(--good);
+    font-weight: 700;
+    font-size: 1.1rem;
+  }
+
+  /* ---------- Resources ---------- */
+  .resources a {
+    display: block;
+    padding: 12px 16px;
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    text-decoration: none;
+    margin-bottom: 8px;
+    transition: all 0.15s ease;
+  }
+  .resources a:hover {
+    border-color: var(--accent-2);
+    transform: translateX(4px);
+  }
+  .resources a .domain {
+    color: var(--accent-2);
+    font-size: 0.8rem;
+    display: block;
+    margin-bottom: 2px;
+  }
+
+  /* ---------- Prompt Lab ---------- */
+  .lab-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .scoreboard {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 8px 16px;
+    font-size: 0.85rem;
+  }
+  .scoreboard .stat strong { color: var(--accent); font-size: 1.1rem; }
+  .scoreboard .stat { display: flex; flex-direction: column; align-items: center; min-width: 56px; }
+  .scoreboard .stat span { color: var(--text-dim); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .challenge-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 16px;
+  }
+  .challenge-tabs button {
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 8px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-family: inherit;
+    transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .challenge-tabs button:hover { color: var(--text); }
+  .challenge-tabs button.active {
+    background: var(--accent);
+    color: var(--bg);
+    border-color: var(--accent);
+    font-weight: 600;
+  }
+  .challenge-tabs button .check {
+    color: var(--good);
+    font-size: 1rem;
+    line-height: 1;
+  }
+  .challenge-tabs button .level {
+    font-size: 0.62rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 1px 6px;
+    border-radius: 999px;
+    font-weight: 700;
+    margin-left: 4px;
+  }
+  .challenge-tabs button .level.easy {
+    background: rgba(129, 199, 132, 0.18);
+    color: var(--good);
+  }
+  .challenge-tabs button .level.medium {
+    background: rgba(255, 183, 77, 0.18);
+    color: var(--accent-2);
+  }
+  .challenge-tabs button.active .level.easy {
+    background: rgba(13, 17, 23, 0.25);
+    color: #0a3a0a;
+  }
+  .challenge-tabs button.active .level.medium {
+    background: rgba(13, 17, 23, 0.25);
+    color: #4a2a00;
+  }
+
+  .challenge {
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+  }
+  .challenge .scenario {
+    background: var(--bg-elev-2);
+    border-left: 3px solid var(--accent-2);
+    padding: 12px 16px;
+    border-radius: 0 6px 6px 0;
+    margin-bottom: 16px;
+  }
+  .challenge .scenario h4 {
+    margin: 0 0 6px;
+    color: var(--accent-2);
+    font-size: 0.95rem;
+  }
+  .challenge .scenario .facts {
+    font-size: 0.88rem;
+    color: var(--text-dim);
+  }
+  .challenge .scenario .facts ul { margin: 6px 0 0; padding-left: 20px; }
+
+  .prompt-input {
+    width: 100%;
+    min-height: 160px;
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 12px 14px;
+    border-radius: 6px;
+    font-family: "SF Mono", Menlo, Monaco, monospace;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    resize: vertical;
+  }
+  .prompt-input:focus { outline: none; border-color: var(--accent); }
+
+  .actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+  }
+  .actions button {
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    padding: 10px 18px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: filter 0.15s ease;
+  }
+  .actions button:hover { filter: brightness(1.1); }
+  .actions button.secondary {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .actions button.secondary:hover { border-color: var(--accent); color: var(--accent); }
+  .actions button.launch {
+    background: linear-gradient(135deg, var(--accent-2), #ff8a65);
+    color: #1a0e00;
+    border: none;
+    margin-left: auto;
+  }
+  .actions button.launch:hover { filter: brightness(1.08); }
+  .actions button.launch.copied {
+    background: var(--good);
+    color: #0a1a08;
+  }
+
+  /* ---------- Real model section ---------- */
+  .tool-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 16px 0;
+  }
+  @media (max-width: 720px) { .tool-grid { grid-template-columns: 1fr; } }
+  .tool {
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 20px;
+    display: flex;
+    flex-direction: column;
+  }
+  .tool.featured { border: 2px solid var(--accent); }
+  .tool .tool-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+  }
+  .tool .tool-title h4 { margin: 0; font-size: 1.1rem; color: var(--text); }
+  .tool .badge {
+    font-size: 0.65rem;
+    background: var(--accent);
+    color: var(--bg);
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .tool .url { color: var(--accent-2); font-size: 0.82rem; text-decoration: none; margin-bottom: 10px; }
+  .tool .url:hover { text-decoration: underline; }
+  .tool ul { padding-left: 20px; margin: 0 0 12px; font-size: 0.9rem; }
+  .tool ul li { margin-bottom: 4px; }
+  .tool .tool-cta {
+    margin-top: auto;
+    padding-top: 10px;
+  }
+  .tool .tool-cta a {
+    display: inline-block;
+    background: var(--accent);
+    color: var(--bg);
+    padding: 8px 16px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: filter 0.15s ease;
+  }
+  .tool .tool-cta a:hover { filter: brightness(1.1); }
+
+  .mapping {
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 20px;
+    margin: 16px 0;
+  }
+  .mapping h3 { margin-top: 0; }
+  .mapping table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  .mapping th, .mapping td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border); }
+  .mapping th { color: var(--accent); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; }
+  .mapping tr:last-child td { border-bottom: none; }
+  .mapping td:first-child { color: var(--accent-2); font-weight: 600; white-space: nowrap; }
+
+  .workflow {
+    counter-reset: wf;
+    list-style: none;
+    padding: 0;
+    margin: 16px 0;
+  }
+  .workflow li {
+    counter-increment: wf;
+    position: relative;
+    padding: 14px 16px 14px 60px;
+    margin-bottom: 10px;
+    background: var(--bg-elev);
+    border-left: 3px solid var(--accent-2);
+    border-radius: 0 8px 8px 0;
+  }
+  .workflow li::before {
+    content: counter(wf);
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--accent-2);
+    color: #1a0e00;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .workflow li b { color: var(--accent-2); }
+  .workflow li code { background: var(--code-bg); padding: 2px 6px; border-radius: 3px; font-size: 0.85em; }
+
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(120%);
+    background: var(--good);
+    color: #0a1a08;
+    padding: 10px 22px;
+    border-radius: 999px;
+    font-weight: 600;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+    transition: transform 0.3s ease;
+    z-index: 200;
+    font-size: 0.9rem;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  .feedback {
+    margin-top: 18px;
+    padding: 16px 18px;
+    background: var(--code-bg);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    scroll-margin-top: 80px;
+  }
+  .feedback.hidden { display: none; }
+  .feedback.flash {
+    animation: feedbackFlash 0.9s ease-out;
+  }
+  @keyframes feedbackFlash {
+    0%   { box-shadow: 0 0 0 0 rgba(79, 195, 247, 0); border-color: var(--border); }
+    25%  { box-shadow: 0 0 0 6px rgba(79, 195, 247, 0.35); border-color: var(--accent); }
+    100% { box-shadow: 0 0 0 0 rgba(79, 195, 247, 0); border-color: var(--border); }
+  }
+  .feedback .feedback-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: -16px -18px 14px;
+    padding: 10px 18px;
+    background: var(--bg-elev-2);
+    border-bottom: 1px solid var(--border);
+    border-radius: 8px 8px 0 0;
+    color: var(--accent);
+    font-weight: 700;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .feedback .feedback-heading button {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 4px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.75rem;
+    font-family: inherit;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+  .feedback .feedback-heading button:hover { border-color: var(--accent); color: var(--accent); }
+  .feedback .score-bar {
+    height: 8px;
+    background: var(--bg-elev-2);
+    border-radius: 4px;
+    overflow: hidden;
+    margin: 10px 0 14px;
+  }
+  .feedback .score-bar > div {
+    height: 100%;
+    background: linear-gradient(90deg, var(--bad), var(--accent-2), var(--good));
+    transition: width 0.4s ease;
+  }
+  .feedback .score-headline {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+  .feedback .score-headline .pct { font-size: 1.6rem; font-weight: 700; color: var(--accent); }
+  .feedback .verdict { color: var(--text-dim); font-size: 0.9rem; }
+  .feedback ul.checks { list-style: none; padding: 0; margin: 0; }
+  .feedback ul.checks li {
+    padding: 6px 0 6px 26px;
+    position: relative;
+    font-size: 0.9rem;
+    border-bottom: 1px dashed var(--border);
+  }
+  .feedback ul.checks li:last-child { border-bottom: none; }
+  .feedback ul.checks li::before {
+    position: absolute;
+    left: 0;
+    top: 6px;
+    font-weight: 700;
+  }
+  .feedback ul.checks li.pass::before { content: "✓"; color: var(--good); }
+  .feedback ul.checks li.fail::before { content: "✗"; color: var(--bad); }
+  .feedback ul.checks li .hint {
+    color: var(--text-dim);
+    font-size: 0.85em;
+    display: block;
+    margin-top: 2px;
+  }
+  .feedback .reference {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+  }
+  .feedback .reference summary {
+    cursor: pointer;
+    color: var(--accent-2);
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+  .feedback .reference pre {
+    margin-top: 10px;
+    font-size: 0.82rem;
+  }
+
+  /* ---------- Back to top ---------- */
+  #to-top {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1.2rem;
+    font-weight: 700;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
+  #to-top.visible { opacity: 1; pointer-events: auto; }
+</style>
+</head>
+<body>
+
+<div id="progress"></div>
+
+<nav class="top">
+  <span class="brand">Prompt Engineering · QA Workshop</span>
+  <a href="#why">Why</a>
+  <a href="#anatomy">Anatomy</a>
+  <a href="#principles">Principles</a>
+  <a href="#techniques">Techniques</a>
+  <a href="#usecases">Use cases</a>
+  <a href="#compare">Compare</a>
+  <a href="#pitfalls">Pitfalls</a>
+  <a href="#builder">Builder</a>
+  <a href="#lab">Lab</a>
+  <a href="#realmodel">Real model</a>
+  <a href="#exercises">Exercises</a>
+  <a href="#takeaways">Take home</a>
+</nav>
+
+<main>
+
+  <!-- ===== Hero ===== -->
+  <section class="hero" id="top">
+    <h1>Prompt Engineering<br><span>for QA Engineers</span></h1>
+    <p class="lead">Get better, faster, and more reliable output from LLMs — without trusting them blindly.</p>
+    <div class="meta">
+      <span>⏱ ~30 min read</span>
+      <span>🎯 QA-focused</span>
+      <span>🛠 Hands-on</span>
+    </div>
+  </section>
+
+  <!-- ===== 1. Why ===== -->
+  <section id="why">
+    <span class="num">01 · Why</span>
+    <h2>Why prompt engineering matters for QA</h2>
+    <p class="lead">QA work is uniquely well-suited to LLMs — and uniquely vulnerable to bad output.</p>
+    <div class="grid-2">
+      <div class="card good">
+        <div class="title">⚡ Where LLMs help</div>
+        <ul>
+          <li>Test case generation from requirements</li>
+          <li>Bug report drafting & triage</li>
+          <li>Test data synthesis</li>
+          <li>Log and stacktrace analysis</li>
+          <li>Selenium / Playwright / API test boilerplate</li>
+        </ul>
+      </div>
+      <div class="card bad">
+        <div class="title">⚠️ Where they hurt you</div>
+        <ul>
+          <li>Hallucinated APIs and methods</li>
+          <li>Missed edge cases and negative paths</li>
+          <li>Confidently wrong assertions</li>
+          <li>Subtle off-by-one bugs in generated code</li>
+          <li>Coverage <em>illusion</em> — many tests, low value</li>
+        </ul>
+      </div>
+    </div>
+    <p style="margin-top:16px;"><strong>Prompt engineering is the difference between the two columns.</strong></p>
+  </section>
+
+  <!-- ===== 2. Anatomy ===== -->
+  <section id="anatomy">
+    <span class="num">02 · Anatomy</span>
+    <h2>Anatomy of a prompt</h2>
+    <span class="source-badge">Source: ISTQB® CT-GenAI v1.1 — Testing with Generative AI</span>
+    <p>The official <strong>ISTQB Certified Tester — Testing with Generative AI</strong> syllabus defines a prompt as a structure with <strong>six components</strong>. Hover each block for the definition.</p>
+    <div class="anatomy">
+      <div class="block" title="The role defines the perspective or persona that the GenAI model should take when generating a response. Specifying the role helps the LLM determine its responsibilities and adopt an appropriate tone or approach, such as acting as a tester, test manager, or test automation engineer.">
+        <span class="n">1</span>
+        <div class="label">ROLE</div>
+        <div class="desc">Perspective or persona the model should take (tester, test manager, automation engineer)</div>
+      </div>
+      <div class="block" title="Context provides the background information that the GenAI model needs to determine the test conditions. This includes details about the test object, the specific functionality to be tested, and any relevant contextual information.">
+        <span class="n">2</span>
+        <div class="label">CONTEXT</div>
+        <div class="desc">Background — test object, functionality, environment, conditions</div>
+      </div>
+      <div class="block" title="Instructions are directives given to the GenAI that outline the specific task to be performed. Clear, imperative and concise instructions include a task description and any relevant requirements for the task.">
+        <span class="n">3</span>
+        <div class="label">INSTRUCTION</div>
+        <div class="desc">The directive — clear, imperative, concise. What to do.</div>
+      </div>
+      <div class="block" title="Input data includes any information needed to perform the task, such as user stories, acceptance criteria, screenshots, code, existing test cases or output examples. Providing detailed and structured input data helps the LLM to generate more accurate and context-aware results.">
+        <span class="n">4</span>
+        <div class="label">INPUT DATA</div>
+        <div class="desc">User stories, ACs, screenshots, code, existing tests, examples</div>
+      </div>
+      <div class="block" title="Constraints outline any restrictions or special considerations that the LLM should adhere to. Constraints help to specify how instructions should be applied to input data.">
+        <span class="n">5</span>
+        <div class="label">CONSTRAINTS</div>
+        <div class="desc">Restrictions and special considerations the model must respect</div>
+      </div>
+      <div class="block" title="Output specifications denote the expected format, structure or characteristics of the response. These indicators help shape the output of the LLM.">
+        <span class="n">6</span>
+        <div class="label">OUTPUT FORMAT</div>
+        <div class="desc">Expected shape — table, Gherkin, JSON, markdown, length</div>
+      </div>
+    </div>
+
+    <h3>Example using all six components</h3>
+<pre><code>You are a senior QA tester.                                  // 1. ROLE
+
+We are testing a password-reset flow on a public web app.    // 2. CONTEXT
+The link arrives by email, expires after 30 minutes,
+and is single-use.
+
+Generate manual test cases that cover every acceptance       // 3. INSTRUCTION
+criterion below, including positive, negative, and
+boundary scenarios.
+
+User story: "As a registered user, I want to reset my        // 4. INPUT DATA
+password via email link..."
+Acceptance criteria:
+- AC1: Email is sent only if the account exists.
+- AC2: Same confirmation message appears regardless.
+- AC3: Reset link expires after 30 minutes.
+- AC4: Reset link is single-use.
+- AC5: Password policy: 8+ chars, 1 number, 1 special.
+
+Limit to 12 cases. Do not invent UI elements not             // 5. CONSTRAINTS
+implied by the acceptance criteria. Each AC must
+be covered by at least one positive and one negative case.
+
+Output as a markdown table with columns:                     // 6. OUTPUT FORMAT
+ID | Title | Preconditions | Steps | Expected Result | Priority | AC covered</code></pre>
+    <p style="font-size:0.82rem; color:var(--text-dim); margin-top:14px;">
+      Definitions quoted from the ISTQB® CT-GenAI v1.1 syllabus. Every block above maps to one of the six components defined there. The acronym <strong style="color:var(--accent)">R-C-I-I-C-O</strong> can be a memory aid (Role, Context, Instruction, Input data, Constraints, Output format).
+    </p>
+  </section>
+
+  <!-- ===== 3. Principles ===== -->
+  <section id="principles">
+    <span class="num">03 · Principles</span>
+    <h2>Five core principles</h2>
+    <ol class="principles">
+      <li><b>Be specific.</b> Vague prompts produce vague tests. "Test the login page" → generic happy path. "Test 8 scenarios for /login including lockout after 5 failures" → useful coverage.</li>
+      <li><b>Provide context.</b> Stack, schema, prior failures, acceptance criteria. The model can't guess what it doesn't know.</li>
+      <li><b>Show examples.</b> One good example beats a paragraph of description. Few-shot prompting works.</li>
+      <li><b>Iterate.</b> Treat the prompt like code — refine, version, peer-review. Save winners.</li>
+      <li><b>Verify.</b> Never ship LLM output unread. <em>Especially</em> assertions and test data.</li>
+    </ol>
+    <p style="text-align:center; color:var(--text-dim); margin-top:18px;">
+      Mnemonic: <strong style="color:var(--accent)">S-C-E-I-V</strong> — Specific, Context, Examples, Iterate, Verify.
+    </p>
+  </section>
+
+  <!-- ===== 4. Techniques ===== -->
+  <section id="techniques">
+    <span class="num">04 · Techniques</span>
+    <h2>Techniques in your toolbox</h2>
+    <div class="tech-grid">
+      <div class="tech">
+        <b>Zero-shot</b>
+        Just ask. Fast for simple tasks.
+        <div class="ex">"List edge cases for a date picker."</div>
+      </div>
+      <div class="tech">
+        <b>Few-shot</b>
+        Provide 2–5 examples of input → desired output.
+        <div class="ex">Best for consistent format across many requests.</div>
+      </div>
+      <div class="tech">
+        <b>Chain-of-thought</b>
+        "Think step by step before answering."
+        <div class="ex">Reduces logic errors in test design and triage.</div>
+      </div>
+      <div class="tech">
+        <b>Role prompting</b>
+        "Act as a security tester / accessibility auditor."
+        <div class="ex">Shifts the lens, surfaces different defects.</div>
+      </div>
+      <div class="tech">
+        <b>Constrained output</b>
+        Force JSON / schema / Gherkin.
+        <div class="ex">Pipeline-friendly, machine-parseable.</div>
+      </div>
+      <div class="tech">
+        <b>Self-critique</b>
+        "Now review your answer for missing cases."
+        <div class="ex">Two-pass = better coverage in practice.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 5. Use cases ===== -->
+  <section id="usecases">
+    <span class="num">05 · Use cases</span>
+    <h2>Real QA use cases</h2>
+    <table class="uc">
+      <thead>
+        <tr><th>Task</th><th>Prompt pattern</th><th>Output</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Test case generation</td><td>Role + spec + Gherkin format</td><td>Feature files</td></tr>
+        <tr><td>Bug triage</td><td>Few-shot with severity examples</td><td>Severity + duplicate check</td></tr>
+        <tr><td>Test data synthesis</td><td>Schema + locale + edge constraints</td><td>CSV / JSON fixtures</td></tr>
+        <tr><td>Log analysis</td><td>Chain-of-thought + log snippet</td><td>Root-cause hypothesis</td></tr>
+        <tr><td>UI test scripting</td><td>DOM snippet + role + framework</td><td>Stable selectors + test code</td></tr>
+        <tr><td>Regression risk review</td><td>Diff + acceptance criteria + role</td><td>Risk areas to retest</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ===== 6. Compare ===== -->
+  <section id="compare">
+    <span class="num">06 · Compare</span>
+    <h2>Vague vs. engineered — same task, different result</h2>
+    <div class="tabs">
+      <button class="active" data-tab="vague">😬 Vague prompt</button>
+      <button data-tab="engineered">✨ Engineered prompt</button>
+    </div>
+
+    <div class="tab-panel active" id="tab-vague">
+      <div class="card bad">
+        <div class="title">Prompt</div>
+        <pre style="margin:0;"><code>Write some tests for the login page.</code></pre>
+        <div class="title" style="margin-top:14px;">Likely output</div>
+        <p style="margin:0;">Generic happy-path test for username/password. No edge cases, no framework specified, selectors that don't match your app, possibly fabricated APIs. Looks fine until you run it.</p>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="tab-engineered">
+      <div class="card good">
+        <div class="title">Prompt</div>
+<pre style="margin:0;"><code>You are a senior QA engineer using Playwright + TypeScript.
+The login page is at /login with fields #email, #password,
+button [data-testid="login-submit"]. Backend returns 401
+on bad credentials and locks the account after 5 failures.
+
+Generate 8 test cases covering: happy path, empty fields,
+malformed email, lockout, password visibility toggle, and
+Enter-key submission.
+
+Output as a Playwright test file. Use page.getByTestId where
+possible. Do not invent selectors not listed above.</code></pre>
+        <div class="title" style="margin-top:14px;">Likely output</div>
+        <p style="margin:0;">Runnable spec file with stable selectors, real edge cases, and assertions tied to documented backend behavior.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 7. Pitfalls ===== -->
+  <section id="pitfalls">
+    <span class="num">07 · Pitfalls</span>
+    <h2>Common pitfalls (and fixes)</h2>
+    <div class="pitfall"><span class="icon">🌀</span><div>
+      <b>Hallucinated APIs.</b> The model invents a method that <em>sounds</em> right.
+      <div class="fix">Fix: provide real signatures in context. Always run the code.</div>
+    </div></div>
+    <div class="pitfall"><span class="icon">🤐</span><div>
+      <b>Missing constraints.</b> "Generate test data" → 10 plausible but invalid rows.
+      <div class="fix">Fix: state schema, ranges, locales, required formats explicitly.</div>
+    </div></div>
+    <div class="pitfall"><span class="icon">📏</span><div>
+      <b>Coverage illusion.</b> 50 generated tests, all on the happy path.
+      <div class="fix">Fix: ask for boundary, negative, and security cases by name.</div>
+    </div></div>
+    <div class="pitfall"><span class="icon">🎭</span><div>
+      <b>Over-trusting tone.</b> Confident wording does not equal correctness.
+      <div class="fix">Fix: ask "what assumptions did you make?" as a second pass.</div>
+    </div></div>
+    <div class="pitfall"><span class="icon">🔁</span><div>
+      <b>Stale context.</b> Spec changes; prompt template doesn't.
+      <div class="fix">Fix: version prompts in the same repo as your tests.</div>
+    </div></div>
+  </section>
+
+  <!-- ===== 8. Builder ===== -->
+  <section id="builder">
+    <span class="num">08 · Hands-on</span>
+    <h2>Build a prompt — live</h2>
+    <p>Edit the fields below — one for each of the six ISTQB CT-GenAI components. The composed prompt updates as you type. Copy it when ready.</p>
+    <div class="builder">
+      <label for="b-role">1. Role</label>
+      <input id="b-role" value="senior QA tester" oninput="rebuild()">
+
+      <label for="b-context">2. Context</label>
+      <textarea id="b-context" oninput="rebuild()">Password-reset flow on a public web app. The link arrives by email, expires after 30 minutes, and is single-use.</textarea>
+
+      <label for="b-task">3. Instruction</label>
+      <input id="b-task" value="Generate manual test cases covering every acceptance criterion, including positive, negative and boundary scenarios" oninput="rebuild()">
+
+      <label for="b-input">4. Input data</label>
+      <textarea id="b-input" oninput="rebuild()">User story: "As a registered user, I want to reset my password via email link."
+ACs:
+- AC1: Email is sent only if the account exists.
+- AC2: Same confirmation message regardless.
+- AC3: Reset link expires after 30 minutes.
+- AC4: Reset link is single-use.
+- AC5: Password policy: 8+ chars, 1 number, 1 special.</textarea>
+
+      <label for="b-constraints">5. Constraints</label>
+      <input id="b-constraints" value="Limit to 12 cases. Do not invent UI elements not implied by the ACs. Each AC must have at least one positive and one negative case." oninput="rebuild()">
+
+      <label for="b-format">6. Output format</label>
+      <select id="b-format" onchange="rebuild()">
+        <option>markdown table with columns: ID | Title | Preconditions | Steps | Expected | Priority | AC covered</option>
+        <option>Gherkin feature file with @AC tags</option>
+        <option>JSON array of test objects</option>
+        <option>numbered list, plain language</option>
+      </select>
+
+      <div class="output-wrap">
+        <button class="copy-btn" onclick="copyPrompt(this)">Copy</button>
+        <div class="output" id="b-output"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 9. Prompt Lab ===== -->
+  <section id="lab">
+    <span class="num">09 · Lab</span>
+    <div class="lab-header">
+      <h2 style="margin:0;">Prompt Lab — practice mode</h2>
+      <div class="scoreboard">
+        <div class="stat"><strong id="lab-solved">0</strong><span>solved</span></div>
+        <div class="stat"><strong id="lab-best">0%</strong><span>best</span></div>
+        <div class="stat"><strong id="lab-attempts">0</strong><span>attempts</span></div>
+      </div>
+    </div>
+    <p>Pick a real <strong>manual QA</strong> scenario, write a prompt, and get scored feedback. Challenges are tagged <strong style="color:var(--good)">easy</strong> or <strong style="color:var(--accent-2)">medium</strong> — start with easy ones to build the muscle. The scorer rewards prompts that include the basic anatomy (Role, Task, Format) and scenario-relevant elements. Aim for <strong>80%+</strong>.</p>
+
+    <div class="challenge-tabs" id="challenge-tabs"></div>
+
+    <div class="challenge" id="challenge-card">
+      <div class="scenario">
+        <h4 id="ch-title"></h4>
+        <div class="facts" id="ch-facts"></div>
+      </div>
+
+      <label for="prompt-input" style="display:block; font-weight:600; font-size:0.85rem; color:var(--accent); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:6px;">
+        Your prompt
+      </label>
+      <textarea id="prompt-input" class="prompt-input" placeholder="Write your prompt here. Remember: Role, Context, Task, Format, Constraints..."></textarea>
+
+      <div class="actions">
+        <button onclick="evaluatePrompt()">Evaluate</button>
+        <button class="secondary" onclick="resetChallenge()">Reset</button>
+        <button class="secondary" onclick="loadStarter()">Load starter</button>
+        <button class="launch" onclick="launchExternal('aistudio', this)" title="Copy prompt and open Google AI Studio">
+          🚀 Test in AI Studio
+        </button>
+        <button class="launch" onclick="launchExternal('lmarena', this)" title="Copy prompt and open LMSYS Arena (compare across models)">
+          ⚔️ Test in LMSYS Arena
+        </button>
+      </div>
+
+      <div class="feedback hidden" id="feedback"></div>
+    </div>
+  </section>
+
+  <!-- ===== 10. Real model ===== -->
+  <section id="realmodel">
+    <span class="num">10 · Real model</span>
+    <h2>Take it to a real model</h2>
+    <p class="lead">The Lab teaches the <em>anatomy</em>. A real model teaches what <em>actually works</em>. Use these free, no-license tools to run your prompts for real and iterate.</p>
+
+    <div class="tool-grid">
+      <div class="tool featured">
+        <div class="tool-title">
+          <h4>Google AI Studio</h4>
+          <span class="badge">Recommended</span>
+        </div>
+        <a class="url" href="https://aistudio.google.com" target="_blank" rel="noopener">aistudio.google.com</a>
+        <ul>
+          <li>Free with a Google account — no payment, no API key</li>
+          <li>UI maps directly to the 5-component anatomy</li>
+          <li>Native <strong>Structured output</strong> (JSON schema) — perfect for QA pipelines</li>
+          <li>Save & share prompts via link</li>
+          <li>Adjustable temperature for testing determinism</li>
+        </ul>
+        <div class="tool-cta">
+          <a href="https://aistudio.google.com/prompts/new_chat" target="_blank" rel="noopener">Open AI Studio →</a>
+        </div>
+      </div>
+
+      <div class="tool featured">
+        <div class="tool-title">
+          <h4>LMSYS Chatbot Arena</h4>
+          <span class="badge" style="background:var(--accent-2); color:#1a0e00;">A/B testing</span>
+        </div>
+        <a class="url" href="https://lmarena.ai" target="_blank" rel="noopener">lmarena.ai</a>
+        <ul>
+          <li>Completely free, no signup</li>
+          <li><strong>Side-by-side mode:</strong> same prompt, two different models</li>
+          <li>Proves a sloppy prompt is sloppy <em>everywhere</em></li>
+          <li>Great for picking the right model for a QA task</li>
+        </ul>
+        <div class="tool-cta">
+          <a href="https://lmarena.ai/?mode=side-by-side" target="_blank" rel="noopener">Open Arena →</a>
+        </div>
+      </div>
+
+      <div class="tool">
+        <div class="tool-title"><h4>Hugging Face Chat</h4></div>
+        <a class="url" href="https://huggingface.co/chat" target="_blank" rel="noopener">huggingface.co/chat</a>
+        <ul>
+          <li>Free, open-source models (Llama, Mistral, etc.)</li>
+          <li>Custom system prompts in "Assistants"</li>
+          <li>Web search built in</li>
+        </ul>
+        <div class="tool-cta">
+          <a href="https://huggingface.co/chat" target="_blank" rel="noopener">Open HF Chat →</a>
+        </div>
+      </div>
+
+      <div class="tool">
+        <div class="tool-title"><h4>Claude.ai (free tier)</h4></div>
+        <a class="url" href="https://claude.ai" target="_blank" rel="noopener">claude.ai</a>
+        <ul>
+          <li>Strong on long-context QA (paste a whole spec)</li>
+          <li>Projects let you reuse a system prompt + files</li>
+          <li>Free tier — daily message limit</li>
+        </ul>
+        <div class="tool-cta">
+          <a href="https://claude.ai" target="_blank" rel="noopener">Open Claude →</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="mapping">
+      <h3>ISTQB CT-GenAI components → AI Studio UI</h3>
+      <p style="font-size:0.9rem; color:var(--text-dim); margin-top:0;">Drop each of the six components into the right field — the model will respect the structure.</p>
+      <table>
+        <thead>
+          <tr><th>ISTQB component</th><th>AI Studio field</th><th>Why it matters</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>1. Role</td><td>System instructions</td><td>Persists across the whole conversation; sets persona globally</td></tr>
+          <tr><td>2. Context</td><td>System instructions <em>or</em> top of prompt</td><td>Test object, environment, prior failures — anchors the model</td></tr>
+          <tr><td>3. Instruction</td><td>Main prompt area</td><td>The directive — clear, imperative, verb-first</td></tr>
+          <tr><td>4. Input data</td><td>Main prompt area (or attached files)</td><td>User stories, ACs, screenshots, code, examples — drives accuracy</td></tr>
+          <tr><td>5. Constraints</td><td>System instructions + temperature slider</td><td>Lower temp (0–0.3) for determinism; instructions for restrictions</td></tr>
+          <tr><td>6. Output format</td><td>Structured output toggle (JSON schema)</td><td>Forces machine-readable output for pipelines</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Suggested workflow — the 5-step practice loop</h3>
+    <ol class="workflow">
+      <li><b>Draft in the Lab.</b> Write your prompt for one of the 4 challenges. Get it to <strong>80%+</strong>.</li>
+      <li><b>Send to AI Studio.</b> Click <code>🚀 Test in AI Studio</code> in the Lab — it copies your prompt and opens AI Studio in a new tab. Paste into the prompt field.</li>
+      <li><b>Run and read.</b> Run the prompt. Check whether the output actually solves the QA task: are the test cases real, are the selectors correct, is the JSON parseable?</li>
+      <li><b>Compare with reference.</b> Back in the Lab, open the reference prompt, run that in a new AI Studio chat, and compare both outputs.</li>
+      <li><b>A/B across models.</b> Click <code>⚔️ Test in LMSYS Arena</code> to run the same prompt against two models side-by-side. If one fails badly, your prompt is brittle — tighten it.</li>
+    </ol>
+
+    <h3>Pro tips for AI Studio specifically</h3>
+    <ul class="checklist">
+      <li>Set <strong>Temperature = 0.2</strong> for QA work — you want deterministic, not creative.</li>
+      <li>Turn on <strong>Structured output</strong> with a JSON schema for any test data or triage task.</li>
+      <li>Use the <strong>"Get code"</strong> button to convert a working prompt into an API call you can put in CI.</li>
+      <li>Save winning prompts via <strong>"Save to library"</strong> — version-control the winners alongside your tests.</li>
+    </ul>
+  </section>
+
+  <!-- ===== 11. Exercises ===== -->
+  <section id="exercises">
+    <span class="num">11 · Practice</span>
+    <h2>Exercises — try these</h2>
+    <p>Click each to reveal a sample answer.</p>
+
+    <details class="exercise">
+      <summary>1. Rewrite this prompt: "Generate test cases for the search bar."</summary>
+      <div class="ans">
+        <strong>Improved:</strong>
+        <pre><code>You are a QA engineer. The search bar is on the homepage,
+accepts up to 200 chars, supports quoted phrases and the
+operators AND/OR/NOT. Backend trims whitespace and is
+case-insensitive.
+
+Generate 12 test cases covering: empty input, max length,
+SQL/script injection, Unicode, operator precedence, and
+no-results state.
+
+Output as a Gherkin feature file.</code></pre>
+      </div>
+    </details>
+
+    <details class="exercise">
+      <summary>2. The model invented a method <code class="inline">page.waitForStableNetwork()</code>. What went wrong?</summary>
+      <div class="ans">
+        Likely a hallucination — the real Playwright API is <code class="inline">page.waitForLoadState('networkidle')</code>. The prompt didn't constrain the model to documented APIs. Fix by including a snippet of the framework's real API surface or instructing: "Use only documented Playwright API methods. If unsure, say so."
+      </div>
+    </details>
+
+    <details class="exercise">
+      <summary>3. You need test data for users in 5 locales. Sketch a prompt.</summary>
+      <div class="ans">
+        <pre><code>Generate 10 user records as a JSON array. Each record:
+{ id, name, email, phone, locale }.
+
+Locales to cover (2 each): en-US, de-DE, ja-JP, ar-SA, pt-BR.
+
+Constraints:
+- Names must be plausible for the locale (not just translated).
+- Phones must match locale dialing format.
+- Emails must be valid RFC 5322.
+- Include one edge case per locale (max-length name,
+  RTL chars, etc.).
+
+Output: valid JSON only, no commentary.</code></pre>
+      </div>
+    </details>
+
+    <details class="exercise">
+      <summary>4. You got 50 test cases but they all pass on day one. Why might that be a problem?</summary>
+      <div class="ans">
+        Coverage illusion. The model likely generated only the happy path or trivial variations. Tests that always pass don't catch regressions. Add a self-critique pass: "Review the cases above. Which behaviors are NOT yet tested? Add cases for boundaries, error states, and concurrency." Then trim duplicates.
+      </div>
+    </details>
+  </section>
+
+  <!-- ===== 12. Take home ===== -->
+  <section id="takeaways">
+    <span class="num">12 · Take home</span>
+    <h2>Take this home</h2>
+    <ul class="checklist">
+      <li>Build every prompt from the six ISTQB CT-GenAI components: <strong>Role · Context · Instruction · Input data · Constraints · Output format</strong>.</li>
+      <li>Show one good example before asking for many.</li>
+      <li>Force structured output (JSON / Gherkin) for anything pipeline-bound.</li>
+      <li>Always do a self-critique pass for coverage.</li>
+      <li>Never ship LLM-written assertions unread.</li>
+      <li>Version-control prompts alongside the tests they generate.</li>
+    </ul>
+
+    <h3>Further reading</h3>
+    <div class="resources">
+      <a href="https://www.promptingguide.ai/" target="_blank" rel="noopener">
+        <span class="domain">promptingguide.ai</span>
+        Prompt Engineering Guide — comprehensive technique reference
+      </a>
+      <a href="https://platform.openai.com/docs/guides/prompt-engineering" target="_blank" rel="noopener">
+        <span class="domain">platform.openai.com</span>
+        OpenAI — Prompt Engineering Guide
+      </a>
+      <a href="https://docs.anthropic.com/claude/docs/prompt-engineering" target="_blank" rel="noopener">
+        <span class="domain">docs.anthropic.com</span>
+        Anthropic — Prompt Engineering for Claude
+      </a>
+      <a href="https://github.com/dair-ai/Prompt-Engineering-Guide" target="_blank" rel="noopener">
+        <span class="domain">github.com/dair-ai</span>
+        DAIR.AI Prompt Engineering Guide (open source)
+      </a>
+    </div>
+
+    <p style="text-align:center; margin-top:32px; font-size:1.1rem; color:var(--accent);">
+      <strong>Questions? Discussion?</strong>
+    </p>
+  </section>
+
+</main>
+
+<button id="to-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="Back to top">↑</button>
+
+<script>
+  // Progress bar
+  function updateProgress() {
+    const h = document.documentElement;
+    const scrolled = h.scrollTop;
+    const max = h.scrollHeight - h.clientHeight;
+    const pct = max > 0 ? (scrolled / max) * 100 : 0;
+    document.getElementById('progress').style.width = pct + '%';
+    document.getElementById('to-top').classList.toggle('visible', scrolled > 400);
+  }
+  window.addEventListener('scroll', updateProgress, { passive: true });
+
+  // Active nav highlight via IntersectionObserver
+  const navLinks = document.querySelectorAll('nav.top a');
+  const sections = Array.from(navLinks).map(a => document.querySelector(a.getAttribute('href'))).filter(Boolean);
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        navLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + e.target.id));
+      }
+    });
+  }, { rootMargin: '-40% 0px -55% 0px' });
+  sections.forEach(s => obs.observe(s));
+
+  // Tabs
+  document.querySelectorAll('.tabs button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tab = btn.dataset.tab;
+      btn.parentElement.querySelectorAll('button').forEach(b => b.classList.toggle('active', b === btn));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'tab-' + tab));
+    });
+  });
+
+  // Live prompt builder — assembles a prompt using the six ISTQB CT-GenAI
+  // components: Role, Context, Instruction, Input data, Constraints, Output format.
+  function rebuild() {
+    const role        = document.getElementById('b-role').value.trim();
+    const context     = document.getElementById('b-context').value.trim();
+    const task        = document.getElementById('b-task').value.trim();
+    const inputData   = document.getElementById('b-input').value.trim();
+    const constraints = document.getElementById('b-constraints').value.trim();
+    const format      = document.getElementById('b-format').value.trim();
+    document.getElementById('b-output').textContent =
+`# Role
+You are a ${role}.
+
+# Context
+${context}
+
+# Instruction
+${task}.
+
+# Input data
+${inputData}
+
+# Constraints
+${constraints}
+
+# Output format
+${format}`;
+  }
+  function copyPrompt(btn) {
+    const text = document.getElementById('b-output').textContent;
+    navigator.clipboard.writeText(text).then(() => {
+      const orig = btn.textContent;
+      btn.textContent = 'Copied!';
+      setTimeout(() => btn.textContent = orig, 1500);
+    });
+  }
+  rebuild();
+  updateProgress();
+
+  // ============================================================
+  // PROMPT LAB
+  // ============================================================
+  // Each challenge defines:
+  //   - title / scenario / facts (what the user is testing)
+  //   - starter prompt (a weak baseline they can load)
+  //   - reference (the model answer)
+  //   - criteria: array of { id, label, hint, regex (or function), weight }
+  // The scorer is heuristic — it rewards prompts that include the
+  // structural and scenario-specific elements of a strong QA prompt.
+
+  const CHALLENGES = [
+    {
+      id: 'testcases',
+      level: 'easy',
+      title: '🧪 Test cases for a signup form',
+      scenario: 'Write a prompt that asks for manual test cases for a simple newsletter signup form.',
+      facts: [
+        'Form has one email field and a "Subscribe" button',
+        'Valid email → success message',
+        'Invalid email → inline error',
+        'No backend integration needed for now — just UI behavior',
+        'Output goes into a basic test management tool'
+      ],
+      starter: 'Generate test cases for the signup form.',
+      reference:
+`You are a QA tester writing manual test cases for a newsletter signup form.
+
+Context: The form has one email field and a "Subscribe" button. A valid email shows a success message. An invalid email shows an inline error. Backend is out of scope.
+
+Task: Write 6 test cases covering positive (valid email formats) and negative (empty, missing @, too long, invalid characters) scenarios.
+
+Output as a markdown table with columns: ID | Title | Steps | Expected Result.
+
+Constraints: Keep steps simple, no code, written for a manual tester.`,
+      criteria: [
+        { id: 'role', label: 'Role declared', hint: 'Open with "You are a QA tester" or similar.',
+          test: p => /\b(qa|tester|test|engineer|analyst|you\s*are)\b/i.test(p) },
+        { id: 'task', label: 'Asks for test cases', hint: 'Be explicit: "write test cases" / "generate cases".',
+          test: p => /\b(test\s*cases?|test\s*scenarios?|write|generate|produce|cases?)\b/i.test(p) },
+        { id: 'pos_neg', label: 'Positive + negative scenarios', hint: 'Mention valid + invalid (or positive + negative).',
+          test: p => /\b(positive|valid|happy)\b/i.test(p) && /\b(negative|invalid|error|empty)\b/i.test(p) },
+        { id: 'format', label: 'Output format specified', hint: 'Ask for a table, list, or markdown.',
+          test: p => /\b(table|list|markdown|format|columns?|output|gherkin)\b/i.test(p) },
+        { id: 'count', label: 'Number of cases hinted', hint: 'Cap or target a count (e.g. "6 cases", "at least 5").',
+          test: p => /\d/.test(p) && /\b(tests?|cases?|scenarios?|examples?)\b/i.test(p) || /\b(at\s*least\s*\d+|up\s*to\s*\d+|several|multiple|few)\b/i.test(p) }
+      ]
+    },
+    {
+      id: 'bugreport',
+      level: 'easy',
+      title: '🐛 Bug report writing',
+      scenario: 'You found a bug. Write a prompt that drafts a clear bug report for a developer.',
+      facts: [
+        'Bug: After applying coupon <code class="inline">SAVE15</code>, the discount line is missing on the order summary',
+        'Cart total updates correctly — only the summary line is missing',
+        'Reproduces 100% of the time on Chrome, staging environment',
+        'Other coupons (SAVE10, FREESHIP) work fine',
+        'Will be filed in Jira'
+      ],
+      starter: 'Write a bug report for this issue.',
+      reference:
+`You are a QA engineer writing a Jira bug report. The developer reading this didn't see the bug — make it reproducible from the report alone.
+
+Context: After applying coupon SAVE15 in checkout, the cart total updates correctly but the discount line is missing from the order summary on the review page. Other coupons (SAVE10, FREESHIP) work fine. Reproduces 100% of the time on Chrome, staging environment.
+
+Task: Write a bug report with these sections: Title, Environment, Steps to reproduce, Expected result, Actual result, Severity.
+
+Constraints: Numbered steps, plain language, severity reflects user impact.`,
+      criteria: [
+        { id: 'role', label: 'Role / audience', hint: 'Frame as a QA writing for a developer.',
+          test: p => /\b(qa|tester|engineer|developer|jira|bug\s*report)\b/i.test(p) },
+        { id: 'env', label: 'Environment included', hint: 'Mention browser, environment, or build.',
+          test: p => /\b(environment|browser|chrome|firefox|staging|build|version|os)\b/i.test(p) },
+        { id: 'steps', label: 'Repro steps requested', hint: 'Ask for steps to reproduce.',
+          test: p => /\b(steps?|reproduc|repro|how\s*to)\b/i.test(p) },
+        { id: 'expected_actual', label: 'Expected vs actual', hint: 'Both expected AND actual must be in the report.',
+          test: p => /\bexpected\b/i.test(p) && /\bactual\b/i.test(p) },
+        { id: 'severity', label: 'Severity / priority', hint: 'Ask for severity, priority, or impact.',
+          test: p => /\b(severity|priority|impact|p[0-3])\b/i.test(p) }
+      ]
+    },
+    {
+      id: 'charter',
+      level: 'medium',
+      title: '🗺️ Quick exploratory session plan',
+      scenario: 'Plan a 1-hour exploratory testing session for a new search feature.',
+      facts: [
+        'Feature: New search bar on the homepage',
+        'It supports keyword search and basic filters (price, category)',
+        'You have 1 hour — alone',
+        'Goal: find issues before tomorrow\'s release',
+        'Output is a short plan you can share with the team'
+      ],
+      starter: 'Plan an exploratory session for the search feature.',
+      reference:
+`You are a QA tester running a 1-hour exploratory session.
+
+Context: A new search bar on the homepage supports keyword search and basic filters (price, category). Release is tomorrow.
+
+Task: Create a short exploratory test plan covering: areas to focus on, key risks, test ideas (5–7), and what is out of scope.
+
+Output as a markdown checklist with these sections: Goal, Areas to test, Test ideas, Risks, Time-box.
+
+Constraints: Keep it under one page. No scripted test cases — these are exploration ideas.`,
+      criteria: [
+        { id: 'role', label: 'Tester / exploratory role', hint: 'Frame as a tester or exploratory tester.',
+          test: p => /\b(qa|tester|exploratory|engineer|you\s*are)\b/i.test(p) },
+        { id: 'risk', label: 'Risk or focus areas', hint: 'Ask the model to identify risks or focus areas.',
+          test: p => /\b(risk|focus|area|priorit|concern|important)\b/i.test(p) },
+        { id: 'ideas', label: 'Test ideas requested', hint: 'Ask for test ideas, scenarios, or things to try.',
+          test: p => /\b(test\s*ideas?|ideas?|scenarios?|things\s*to\s*(try|test)|cover)\b/i.test(p) },
+        { id: 'timebox', label: 'Time mentioned', hint: 'Reference the 1-hour time-box.',
+          test: p => /\b(\d+\s*(minutes?|mins?|hours?|hrs?)|time[-\s]*box|timebox|within|under)\b/i.test(p) },
+        { id: 'format', label: 'Output format', hint: 'Ask for a list, checklist, or sections.',
+          test: p => /\b(list|checklist|sections?|markdown|format|plan|output)\b/i.test(p) }
+      ]
+    },
+    {
+      id: 'uat',
+      level: 'medium',
+      title: '📋 UAT scenarios from acceptance criteria',
+      scenario: 'Convert simple acceptance criteria into UAT scenarios for business stakeholders.',
+      facts: [
+        'Feature: "Add to Cart" button on a product page',
+        'AC1: Clicking "Add to Cart" adds the product and shows a confirmation',
+        'AC2: The cart icon updates with the new item count',
+        'AC3: If out of stock, the button is disabled',
+        'Audience: business stakeholders (non-technical) doing UAT'
+      ],
+      starter: 'Write UAT scenarios for "Add to Cart".',
+      reference:
+`You are a QA analyst writing UAT scenarios for non-technical business stakeholders.
+
+Context: Feature is the "Add to Cart" button on a product page.
+Acceptance criteria:
+- AC1: Clicking "Add to Cart" adds the product and shows a confirmation.
+- AC2: The cart icon updates with the new item count.
+- AC3: If the product is out of stock, the button is disabled.
+
+Task: Write UAT scenarios that cover all 3 ACs. Include positive and negative cases.
+
+Output as Given/When/Then steps in plain business language. Tag each scenario with the AC it covers.
+
+Constraints: No technical jargon. Keep to 5–7 scenarios total.`,
+      criteria: [
+        { id: 'audience', label: 'Audience aware', hint: 'Mention business / non-technical / stakeholders.',
+          test: p => /\b(uat|business|stakeholder|non[-\s]*technical|analyst|user)\b/i.test(p) },
+        { id: 'ac', label: 'Acceptance criteria covered', hint: 'Tell the model to cover the ACs.',
+          test: p => /(acceptance\s*criteri|\bac\d?\b|every\s*ac|each\s*ac|all\s*ac|cover)/i.test(p) },
+        { id: 'gherkin', label: 'Given/When/Then or steps', hint: 'Specify Gherkin or step-based format.',
+          test: p => /\b(given|when|then|gherkin|scenario|steps?)\b/i.test(p) },
+        { id: 'pos_neg', label: 'Positive + negative paths', hint: 'Cover both happy and unhappy paths.',
+          test: p => /\b(positive|happy|valid)\b/i.test(p) && /\b(negative|invalid|error|out\s*of\s*stock|unhappy)\b/i.test(p) },
+        { id: 'plain', label: 'Plain language constraint', hint: 'No jargon — written for business users.',
+          test: p => /(plain|business\s*language|no\s*jargon|no\s*technical|simple\s*language|natural)/i.test(p) }
+      ]
+    },
+    {
+      id: 'smoke',
+      level: 'easy',
+      title: '✅ Smoke test list',
+      scenario: 'Pick a small set of smoke tests to run before each release of an online store.',
+      facts: [
+        'Site: a basic online clothing store',
+        'Key flows: browse, search, add to cart, checkout, login',
+        'Goal: catch obvious breakage in 15 minutes or less',
+        'Will be run manually by a QA team member'
+      ],
+      starter: 'Give me a smoke test list for the store.',
+      reference:
+`You are a QA engineer building a smoke test list for an online clothing store.
+
+Context: Key flows are browse, search, add to cart, checkout, and login. The smoke run must finish in under 15 minutes and is performed manually.
+
+Task: List the top 5–7 smoke tests, each focused on a single critical user journey. For each test, include: name, steps in 1–2 lines, expected result, and why it matters.
+
+Output as a markdown table with columns: Test | Steps | Expected | Why critical.
+
+Constraints: No edge cases — only happy-path checks of must-work flows. Keep total time under 15 minutes.`,
+      criteria: [
+        { id: 'role', label: 'QA / engineer role', hint: 'Frame as a QA building a smoke list.',
+          test: p => /\b(qa|tester|engineer|smoke|you\s*are)\b/i.test(p) },
+        { id: 'critical', label: 'Critical / key flows', hint: 'Focus on critical or key user flows.',
+          test: p => /\b(critical|key|main|important|must|core|priority)\b/i.test(p) },
+        { id: 'count', label: 'Reasonable count', hint: 'Cap the list (e.g., 5–7 tests).',
+          test: p => /\d/.test(p) && /\b(tests?|cases?|checks?|items?|smoke|scenarios?|list)\b/i.test(p) || /\b(short\s*list|small\s*set|handful|few)\b/i.test(p) },
+        { id: 'time', label: 'Time constraint', hint: 'Reference the 15-minute budget.',
+          test: p => /\b(\d+\s*(minutes?|mins?|hours?|hrs?)|under\s*\d+|within\s*\d+|quick|fast|short\s*time)\b/i.test(p) },
+        { id: 'format', label: 'Output format', hint: 'Ask for a table, list, or checklist.',
+          test: p => /\b(table|list|checklist|markdown|columns?|format|output)\b/i.test(p) }
+      ]
+    }
+  ];
+
+  // State
+  const labState = {
+    current: 0,
+    attempts: 0,
+    solved: new Set(JSON.parse(localStorage.getItem('lab.solved') || '[]')),
+    best: parseInt(localStorage.getItem('lab.best') || '0', 10)
+  };
+
+  function renderTabs() {
+    const wrap = document.getElementById('challenge-tabs');
+    wrap.innerHTML = '';
+    CHALLENGES.forEach((c, i) => {
+      const btn = document.createElement('button');
+      const level = c.level || 'medium';
+      btn.innerHTML = c.title +
+        ` <span class="level ${level}">${level}</span>` +
+        (labState.solved.has(c.id) ? ' <span class="check">✓</span>' : '');
+      if (i === labState.current) btn.classList.add('active');
+      btn.onclick = () => { labState.current = i; renderChallenge(); };
+      wrap.appendChild(btn);
+    });
+  }
+
+  function renderChallenge() {
+    const c = CHALLENGES[labState.current];
+    document.getElementById('ch-title').textContent = c.scenario;
+    const factsHtml = '<strong>What you\'re testing</strong><ul>' +
+      c.facts.map(f => '<li>' + f + '</li>').join('') + '</ul>';
+    document.getElementById('ch-facts').innerHTML = factsHtml;
+    document.getElementById('prompt-input').value = '';
+    document.getElementById('feedback').classList.add('hidden');
+    document.getElementById('feedback').innerHTML = '';
+    renderTabs();
+    renderScoreboard();
+  }
+
+  function renderScoreboard() {
+    document.getElementById('lab-solved').textContent = labState.solved.size + '/' + CHALLENGES.length;
+    document.getElementById('lab-best').textContent = labState.best + '%';
+    document.getElementById('lab-attempts').textContent = labState.attempts;
+  }
+
+  function loadStarter() {
+    const c = CHALLENGES[labState.current];
+    document.getElementById('prompt-input').value = c.starter;
+  }
+
+  function resetChallenge() {
+    document.getElementById('prompt-input').value = '';
+    document.getElementById('feedback').classList.add('hidden');
+  }
+
+  function evaluatePrompt() {
+    const c = CHALLENGES[labState.current];
+    const text = document.getElementById('prompt-input').value;
+
+    if (text.trim().length < 10) {
+      const fb = document.getElementById('feedback');
+      fb.classList.remove('hidden');
+      fb.innerHTML = `
+        <div class="feedback-heading">
+          <span>📊 Evaluation</span>
+          <button onclick="document.getElementById('feedback').classList.add('hidden')">Close</button>
+        </div>
+        <p style="color:var(--bad); margin:0;">Write a prompt first (at least a sentence).</p>`;
+      fb.classList.remove('flash');
+      void fb.offsetWidth;
+      fb.classList.add('flash');
+      setTimeout(() => fb.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+      return;
+    }
+
+    labState.attempts++;
+
+    // Run criteria
+    const results = c.criteria.map(crit => ({
+      ...crit,
+      pass: !!crit.test(text)
+    }));
+    const passed = results.filter(r => r.pass).length;
+    const total = results.length;
+    const pct = Math.round((passed / total) * 100);
+
+    // Length sanity check — very short prompts can't be high-quality even if they trigger keywords
+    const wordCount = text.trim().split(/\s+/).length;
+    const lengthPenalty = wordCount < 25 ? 0.7 : (wordCount < 40 ? 0.9 : 1.0);
+    const adjusted = Math.round(pct * lengthPenalty);
+
+    // Track stats
+    if (adjusted > labState.best) {
+      labState.best = adjusted;
+      localStorage.setItem('lab.best', String(adjusted));
+    }
+    if (adjusted >= 80) {
+      labState.solved.add(c.id);
+      localStorage.setItem('lab.solved', JSON.stringify([...labState.solved]));
+    }
+
+    // Verdict
+    let verdict = '';
+    if (adjusted >= 90) verdict = '🏆 Excellent — production-ready prompt.';
+    else if (adjusted >= 80) verdict = '✅ Strong — solved! All major components present.';
+    else if (adjusted >= 60) verdict = '🔧 Good start — fill the missing pieces below.';
+    else if (adjusted >= 40) verdict = '⚠️ Partial — major components missing.';
+    else verdict = '❌ Too vague — review the anatomy section and try again.';
+
+    let html = `
+      <div class="feedback-heading">
+        <span>📊 Evaluation</span>
+        <button onclick="document.getElementById('feedback').classList.add('hidden')">Close</button>
+      </div>
+      <div class="score-headline">
+        <div>
+          <div class="pct">${adjusted}%</div>
+          <div class="verdict">${verdict}</div>
+        </div>
+        <div style="font-size:0.85rem; color:var(--text-dim); text-align:right;">
+          ${passed} / ${total} criteria<br>
+          ${wordCount} words${lengthPenalty < 1 ? ' <span style="color:var(--bad)">(length penalty)</span>' : ''}
+        </div>
+      </div>
+      <div class="score-bar"><div style="width:${adjusted}%"></div></div>
+      <ul class="checks">
+    `;
+    results.forEach(r => {
+      html += `<li class="${r.pass ? 'pass' : 'fail'}">
+        <strong>${r.label}</strong>
+        ${!r.pass ? '<span class="hint">' + r.hint + '</span>' : ''}
+      </li>`;
+    });
+    html += `</ul>
+      <details class="reference">
+        <summary>📘 Show reference prompt</summary>
+        <pre><code>${escapeHtml(c.reference)}</code></pre>
+      </details>`;
+
+    const fb = document.getElementById('feedback');
+    fb.innerHTML = html;
+    fb.classList.remove('hidden');
+    // Restart the flash animation by toggling the class
+    fb.classList.remove('flash');
+    void fb.offsetWidth; // force reflow so animation re-triggers
+    fb.classList.add('flash');
+    renderTabs();
+    renderScoreboard();
+    // Scroll the feedback to the top of the viewport so it's impossible to miss.
+    // Using setTimeout to let the browser paint first, and 'start' so the panel
+    // header is at the top with the score-bar visible immediately.
+    setTimeout(() => fb.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+  }
+
+  function escapeHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  // Launch external tool: copy current prompt to clipboard, then open the tool
+  // in a new tab. Public AI Studio / LMSYS don't support URL-based prompt
+  // pre-loading, so the clipboard hand-off is the cleanest UX.
+  const EXTERNAL_TOOLS = {
+    aistudio: { url: 'https://aistudio.google.com/prompts/new_chat', label: 'AI Studio' },
+    lmarena:  { url: 'https://lmarena.ai/?mode=side-by-side',          label: 'LMSYS Arena' }
+  };
+  function launchExternal(toolKey, btn) {
+    const text = document.getElementById('prompt-input').value.trim();
+    const tool = EXTERNAL_TOOLS[toolKey];
+    if (!text) {
+      showToast('Write a prompt first');
+      return;
+    }
+    // Copy first, then open. Some browsers block clipboard from a freshly opened tab,
+    // so we copy in this gesture then open the new window.
+    const opener = () => window.open(tool.url, '_blank', 'noopener');
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(() => {
+        showToast('Prompt copied — paste into ' + tool.label);
+        btn.classList.add('copied');
+        const orig = btn.innerHTML;
+        btn.innerHTML = '✓ Copied — opening...';
+        setTimeout(() => {
+          btn.classList.remove('copied');
+          btn.innerHTML = orig;
+        }, 2000);
+        opener();
+      }).catch(() => {
+        // Fallback: legacy execCommand
+        legacyCopy(text);
+        showToast('Prompt copied — paste into ' + tool.label);
+        opener();
+      });
+    } else {
+      legacyCopy(text);
+      showToast('Prompt copied — paste into ' + tool.label);
+      opener();
+    }
+  }
+  function legacyCopy(text) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta);
+  }
+  let toastTimer;
+  function showToast(msg) {
+    let t = document.getElementById('toast');
+    if (!t) {
+      t = document.createElement('div');
+      t.id = 'toast';
+      t.className = 'toast';
+      document.body.appendChild(t);
+    }
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 2400);
+  }
+
+  // Initialize lab
+  renderChallenge();
+</script>
+</body>
+</html>

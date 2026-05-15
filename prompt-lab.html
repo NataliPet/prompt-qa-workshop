@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prompt Lab — Manual QA Practice</title>
+<style>
+  /* ---------- Base ---------- */
+  :root {
+    --bg: #0d1117;
+    --bg-elev: #161b22;
+    --bg-elev-2: #1f262e;
+    --border: #30363d;
+    --text: #e6edf3;
+    --text-dim: #9da7b1;
+    --accent: #4fc3f7;
+    --accent-2: #ffb74d;
+    --good: #81c784;
+    --bad: #e57373;
+    --code-bg: #0a0e13;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    font-size: 16px;
+  }
+  code, pre, kbd { font-family: "SF Mono", Menlo, Monaco, Consolas, "Courier New", monospace; }
+  a { color: var(--accent-2); }
+
+  /* ---------- Layout ---------- */
+  main { max-width: 960px; margin: 0 auto; padding: 24px 24px 80px; }
+  header.top {
+    text-align: center;
+    padding: 48px 24px 32px;
+    border-bottom: 1px solid var(--border);
+  }
+  header.top h1 {
+    margin: 0 0 8px;
+    font-size: 2.2rem;
+    letter-spacing: -0.02em;
+  }
+  header.top h1 span { color: var(--accent); }
+  header.top p { color: var(--text-dim); margin: 0 auto; max-width: 640px; }
+  header.top .pill {
+    display: inline-block;
+    margin-top: 14px;
+    background: rgba(79, 195, 247, 0.1);
+    color: var(--accent);
+    border: 1px solid rgba(79, 195, 247, 0.3);
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+  }
+
+  /* ---------- Anatomy reference (collapsible) ---------- */
+  details.anatomy-ref {
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin: 24px 0 28px;
+  }
+  details.anatomy-ref summary {
+    cursor: pointer;
+    color: var(--accent);
+    font-weight: 600;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  details.anatomy-ref summary::before {
+    content: "▶";
+    font-size: 0.7em;
+    transition: transform 0.2s ease;
+  }
+  details.anatomy-ref[open] summary::before { transform: rotate(90deg); }
+  details.anatomy-ref .source-badge {
+    display: inline-block;
+    margin-left: auto;
+    background: rgba(79, 195, 247, 0.08);
+    border: 1px solid rgba(79, 195, 247, 0.3);
+    color: var(--accent);
+    font-size: 0.7rem;
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-weight: 500;
+  }
+  .anatomy-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 8px;
+    margin-top: 16px;
+  }
+  @media (max-width: 900px) { .anatomy-grid { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 560px) { .anatomy-grid { grid-template-columns: repeat(2, 1fr); } }
+  .anatomy-grid .block {
+    background: var(--bg-elev-2);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 0.78rem;
+  }
+  .anatomy-grid .block .n {
+    display: block;
+    color: var(--accent);
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-bottom: 2px;
+  }
+  .anatomy-grid .block .label {
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 0.7rem;
+    letter-spacing: 0.05em;
+    margin-bottom: 4px;
+  }
+  .anatomy-grid .block .desc { color: var(--text-dim); font-size: 0.72rem; line-height: 1.4; }
+
+  /* ---------- Scoreboard ---------- */
+  .lab-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .scoreboard {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 8px 16px;
+    font-size: 0.85rem;
+  }
+  .scoreboard .stat strong { color: var(--accent); font-size: 1.1rem; }
+  .scoreboard .stat { display: flex; flex-direction: column; align-items: center; min-width: 56px; }
+  .scoreboard .stat span { color: var(--text-dim); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  /* ---------- Tabs ---------- */
+  .challenge-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 16px;
+  }
+  .challenge-tabs button {
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 8px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-family: inherit;
+    transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .challenge-tabs button:hover { color: var(--text); }
+  .challenge-tabs button.active {
+    background: var(--accent);
+    color: var(--bg);
+    border-color: var(--accent);
+    font-weight: 600;
+  }
+  .challenge-tabs button .check { color: var(--good); font-size: 1rem; line-height: 1; }
+  .challenge-tabs button .level {
+    font-size: 0.62rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 1px 6px;
+    border-radius: 999px;
+    font-weight: 700;
+    margin-left: 4px;
+  }
+  .challenge-tabs button .level.easy { background: rgba(129, 199, 132, 0.18); color: var(--good); }
+  .challenge-tabs button .level.medium { background: rgba(255, 183, 77, 0.18); color: var(--accent-2); }
+  .challenge-tabs button.active .level.easy { background: rgba(13, 17, 23, 0.25); color: #0a3a0a; }
+  .challenge-tabs button.active .level.medium { background: rgba(13, 17, 23, 0.25); color: #4a2a00; }
+
+  /* ---------- Challenge card ---------- */
+  .challenge {
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+  }
+  .challenge .scenario {
+    background: var(--bg-elev-2);
+    border-left: 3px solid var(--accent-2);
+    padding: 12px 16px;
+    border-radius: 0 6px 6px 0;
+    margin-bottom: 16px;
+  }
+  .challenge .scenario h4 {
+    margin: 0 0 6px;
+    color: var(--accent-2);
+    font-size: 0.95rem;
+  }
+  .challenge .scenario .facts { font-size: 0.88rem; color: var(--text-dim); }
+  .challenge .scenario .facts ul { margin: 6px 0 0; padding-left: 20px; }
+  .challenge .scenario .facts code {
+    background: var(--code-bg);
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 0.85em;
+  }
+
+  .field-label {
+    display: block;
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 6px;
+  }
+
+  .prompt-input {
+    width: 100%;
+    min-height: 160px;
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 12px 14px;
+    border-radius: 6px;
+    font-family: "SF Mono", Menlo, Monaco, monospace;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    resize: vertical;
+  }
+  .prompt-input:focus { outline: none; border-color: var(--accent); }
+
+  .actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+  }
+  .actions button {
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    padding: 10px 18px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: filter 0.15s ease;
+  }
+  .actions button:hover { filter: brightness(1.1); }
+  .actions button.secondary {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .actions button.secondary:hover { border-color: var(--accent); color: var(--accent); }
+  .actions button.launch {
+    background: linear-gradient(135deg, var(--accent-2), #ff8a65);
+    color: #1a0e00;
+    border: none;
+    margin-left: auto;
+  }
+  .actions button.launch:hover { filter: brightness(1.08); }
+  .actions button.launch.copied {
+    background: var(--good);
+    color: #0a1a08;
+  }
+
+  /* ---------- Feedback ---------- */
+  .feedback {
+    margin-top: 18px;
+    padding: 16px 18px;
+    background: var(--code-bg);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    scroll-margin-top: 20px;
+  }
+  .feedback.hidden { display: none; }
+  .feedback.flash { animation: feedbackFlash 0.9s ease-out; }
+  @keyframes feedbackFlash {
+    0%   { box-shadow: 0 0 0 0 rgba(79, 195, 247, 0); border-color: var(--border); }
+    25%  { box-shadow: 0 0 0 6px rgba(79, 195, 247, 0.35); border-color: var(--accent); }
+    100% { box-shadow: 0 0 0 0 rgba(79, 195, 247, 0); border-color: var(--border); }
+  }
+  .feedback .feedback-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: -16px -18px 14px;
+    padding: 10px 18px;
+    background: var(--bg-elev-2);
+    border-bottom: 1px solid var(--border);
+    border-radius: 8px 8px 0 0;
+    color: var(--accent);
+    font-weight: 700;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .feedback .feedback-heading button {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 4px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.75rem;
+    font-family: inherit;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+  .feedback .feedback-heading button:hover { border-color: var(--accent); color: var(--accent); }
+  .feedback .score-bar {
+    height: 8px;
+    background: var(--bg-elev-2);
+    border-radius: 4px;
+    overflow: hidden;
+    margin: 10px 0 14px;
+  }
+  .feedback .score-bar > div {
+    height: 100%;
+    background: linear-gradient(90deg, var(--bad), var(--accent-2), var(--good));
+    transition: width 0.4s ease;
+  }
+  .feedback .score-headline {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+  .feedback .score-headline .pct { font-size: 1.6rem; font-weight: 700; color: var(--accent); }
+  .feedback .verdict { color: var(--text-dim); font-size: 0.9rem; }
+  .feedback ul.checks { list-style: none; padding: 0; margin: 0; }
+  .feedback ul.checks li {
+    padding: 6px 0 6px 26px;
+    position: relative;
+    font-size: 0.9rem;
+    border-bottom: 1px dashed var(--border);
+  }
+  .feedback ul.checks li:last-child { border-bottom: none; }
+  .feedback ul.checks li::before {
+    position: absolute;
+    left: 0;
+    top: 6px;
+    font-weight: 700;
+  }
+  .feedback ul.checks li.pass::before { content: "✓"; color: var(--good); }
+  .feedback ul.checks li.fail::before { content: "✗"; color: var(--bad); }
+  .feedback ul.checks li .hint {
+    color: var(--text-dim);
+    font-size: 0.85em;
+    display: block;
+    margin-top: 2px;
+  }
+  .feedback .reference {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+  }
+  .feedback .reference summary {
+    cursor: pointer;
+    color: var(--accent-2);
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+  .feedback .reference pre {
+    margin-top: 10px;
+    background: var(--bg-elev-2);
+    padding: 12px 14px;
+    border-radius: 6px;
+    font-size: 0.82rem;
+    overflow-x: auto;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  /* ---------- Toast ---------- */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(120%);
+    background: var(--good);
+    color: #0a1a08;
+    padding: 10px 22px;
+    border-radius: 999px;
+    font-weight: 600;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+    transition: transform 0.3s ease;
+    z-index: 200;
+    font-size: 0.9rem;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* ---------- Footer ---------- */
+  footer {
+    text-align: center;
+    margin-top: 40px;
+    padding: 20px;
+    border-top: 1px solid var(--border);
+    color: var(--text-dim);
+    font-size: 0.82rem;
+  }
+  footer a { color: var(--accent-2); }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <h1>🧪 Prompt Lab — <span>Manual QA</span></h1>
+  <p>Practice writing prompts for real QA tasks. Get scored feedback against the ISTQB CT-GenAI 6-component anatomy. Send your best prompts straight to AI Studio or LMSYS Arena to test for real.</p>
+  <span class="pill">📘 Aligned with ISTQB® CT-GenAI v1.1</span>
+</header>
+
+<main>
+
+  <!-- ===== Anatomy reference (collapsible) ===== -->
+  <details class="anatomy-ref">
+    <summary>📘 Quick reminder — the 6 prompt components <span class="source-badge">ISTQB CT-GenAI v1.1</span></summary>
+    <div class="anatomy-grid">
+      <div class="block" title="The role defines the perspective or persona that the GenAI model should take when generating a response.">
+        <span class="n">1</span>
+        <div class="label">Role</div>
+        <div class="desc">Persona the model should take (tester, analyst, etc.)</div>
+      </div>
+      <div class="block" title="Context provides the background information that the GenAI model needs to determine the test conditions.">
+        <span class="n">2</span>
+        <div class="label">Context</div>
+        <div class="desc">Background — test object, environment, conditions</div>
+      </div>
+      <div class="block" title="Instructions are directives given to the GenAI that outline the specific task to be performed.">
+        <span class="n">3</span>
+        <div class="label">Instruction</div>
+        <div class="desc">Clear, imperative, concise — what to do</div>
+      </div>
+      <div class="block" title="Input data includes any information needed to perform the task: user stories, ACs, code, screenshots.">
+        <span class="n">4</span>
+        <div class="label">Input data</div>
+        <div class="desc">User stories, ACs, code, examples</div>
+      </div>
+      <div class="block" title="Constraints outline any restrictions or special considerations the LLM should adhere to.">
+        <span class="n">5</span>
+        <div class="label">Constraints</div>
+        <div class="desc">Restrictions and special considerations</div>
+      </div>
+      <div class="block" title="Output specifications denote the expected format, structure or characteristics of the response.">
+        <span class="n">6</span>
+        <div class="label">Output format</div>
+        <div class="desc">Expected shape — table, Gherkin, JSON</div>
+      </div>
+    </div>
+    <p style="font-size:0.78rem; color:var(--text-dim); margin: 14px 0 0;">
+      Definitions paraphrased from the ISTQB® CT-GenAI v1.1 syllabus, "Components of a Prompt".
+    </p>
+  </details>
+
+  <!-- ===== Lab header + scoreboard ===== -->
+  <div class="lab-header">
+    <h2 style="margin:0;">Pick a challenge</h2>
+    <div class="scoreboard">
+      <div class="stat"><strong id="lab-solved">0/5</strong><span>solved</span></div>
+      <div class="stat"><strong id="lab-best">0%</strong><span>best</span></div>
+      <div class="stat"><strong id="lab-attempts">0</strong><span>attempts</span></div>
+    </div>
+  </div>
+  <p style="color:var(--text-dim); margin-top:0;">Each challenge mirrors a real manual-QA task. Aim for <strong>80%+</strong> to mark it solved. Your progress is saved in your browser only.</p>
+
+  <!-- ===== Challenge tabs ===== -->
+  <div class="challenge-tabs" id="challenge-tabs"></div>
+
+  <!-- ===== Active challenge card ===== -->
+  <div class="challenge" id="challenge-card">
+    <div class="scenario">
+      <h4 id="ch-title"></h4>
+      <div class="facts" id="ch-facts"></div>
+    </div>
+
+    <label class="field-label" for="prompt-input">Your prompt</label>
+    <textarea id="prompt-input" class="prompt-input" placeholder="Write your prompt here. Use the 6 components: Role, Context, Instruction, Input data, Constraints, Output format."></textarea>
+
+    <div class="actions">
+      <button onclick="evaluatePrompt()">Evaluate</button>
+      <button class="secondary" onclick="resetChallenge()">Reset</button>
+      <button class="secondary" onclick="loadStarter()">Load starter</button>
+      <button class="launch" onclick="launchExternal('aistudio', this)" title="Copy prompt and open Google AI Studio">🚀 Test in AI Studio</button>
+      <button class="launch" onclick="launchExternal('lmarena', this)" title="Copy prompt and open LMSYS Arena">⚔️ Test in LMSYS Arena</button>
+    </div>
+
+    <div class="feedback hidden" id="feedback"></div>
+  </div>
+
+</main>
+
+<script>
+// ============================================================
+// CHALLENGES
+// ============================================================
+const CHALLENGES = [
+  {
+    id: 'testcases',
+    level: 'easy',
+    title: '🧪 Test cases for a signup form',
+    scenario: 'Write a prompt that asks for manual test cases for a simple newsletter signup form.',
+    facts: [
+      'Form has one email field and a "Subscribe" button',
+      'Valid email → success message',
+      'Invalid email → inline error',
+      'No backend integration needed for now — just UI behavior',
+      'Output goes into a basic test management tool'
+    ],
+    starter: 'Generate test cases for the signup form.',
+    reference:
+`You are a QA tester writing manual test cases for a newsletter signup form.
+
+Context: The form has one email field and a "Subscribe" button. A valid email shows a success message. An invalid email shows an inline error. Backend is out of scope.
+
+Task: Write 6 test cases covering positive (valid email formats) and negative (empty, missing @, too long, invalid characters) scenarios.
+
+Output as a markdown table with columns: ID | Title | Steps | Expected Result.
+
+Constraints: Keep steps simple, no code, written for a manual tester.`,
+    criteria: [
+      { id: 'role', label: 'Role declared', hint: 'Open with "You are a QA tester" or similar.',
+        test: p => /\b(qa|tester|test|engineer|analyst|you\s*are)\b/i.test(p) },
+      { id: 'task', label: 'Asks for test cases', hint: 'Be explicit: "write test cases" / "generate cases".',
+        test: p => /\b(test\s*cases?|test\s*scenarios?|write|generate|produce|cases?)\b/i.test(p) },
+      { id: 'pos_neg', label: 'Positive + negative scenarios', hint: 'Mention valid + invalid (or positive + negative).',
+        test: p => /\b(positive|valid|happy)\b/i.test(p) && /\b(negative|invalid|error|empty)\b/i.test(p) },
+      { id: 'format', label: 'Output format specified', hint: 'Ask for a table, list, or markdown.',
+        test: p => /\b(table|list|markdown|format|columns?|output|gherkin)\b/i.test(p) },
+      { id: 'count', label: 'Number of cases hinted', hint: 'Cap or target a count (e.g. "6 cases", "at least 5").',
+        test: p => /\d/.test(p) && /\b(tests?|cases?|scenarios?|examples?)\b/i.test(p) || /\b(at\s*least\s*\d+|up\s*to\s*\d+|several|multiple|few)\b/i.test(p) }
+    ]
+  },
+  {
+    id: 'bugreport',
+    level: 'easy',
+    title: '🐛 Bug report writing',
+    scenario: 'You found a bug. Write a prompt that drafts a clear bug report for a developer.',
+    facts: [
+      'Bug: After applying coupon <code>SAVE15</code>, the discount line is missing on the order summary',
+      'Cart total updates correctly — only the summary line is missing',
+      'Reproduces 100% of the time on Chrome, staging environment',
+      'Other coupons (SAVE10, FREESHIP) work fine',
+      'Will be filed in Jira'
+    ],
+    starter: 'Write a bug report for this issue.',
+    reference:
+`You are a QA engineer writing a Jira bug report. The developer reading this didn't see the bug — make it reproducible from the report alone.
+
+Context: After applying coupon SAVE15 in checkout, the cart total updates correctly but the discount line is missing from the order summary on the review page. Other coupons (SAVE10, FREESHIP) work fine. Reproduces 100% of the time on Chrome, staging environment.
+
+Task: Write a bug report with these sections: Title, Environment, Steps to reproduce, Expected result, Actual result, Severity.
+
+Constraints: Numbered steps, plain language, severity reflects user impact.`,
+    criteria: [
+      { id: 'role', label: 'Role / audience', hint: 'Frame as a QA writing for a developer.',
+        test: p => /\b(qa|tester|engineer|developer|jira|bug\s*report)\b/i.test(p) },
+      { id: 'env', label: 'Environment included', hint: 'Mention browser, environment, or build.',
+        test: p => /\b(environment|browser|chrome|firefox|staging|build|version|os)\b/i.test(p) },
+      { id: 'steps', label: 'Repro steps requested', hint: 'Ask for steps to reproduce.',
+        test: p => /\b(steps?|reproduc|repro|how\s*to)\b/i.test(p) },
+      { id: 'expected_actual', label: 'Expected vs actual', hint: 'Both expected AND actual must be in the report.',
+        test: p => /\bexpected\b/i.test(p) && /\bactual\b/i.test(p) },
+      { id: 'severity', label: 'Severity / priority', hint: 'Ask for severity, priority, or impact.',
+        test: p => /\b(severity|priority|impact|p[0-3])\b/i.test(p) }
+    ]
+  },
+  {
+    id: 'charter',
+    level: 'medium',
+    title: '🗺️ Quick exploratory session plan',
+    scenario: 'Plan a 1-hour exploratory testing session for a new search feature.',
+    facts: [
+      'Feature: New search bar on the homepage',
+      'It supports keyword search and basic filters (price, category)',
+      'You have 1 hour — alone',
+      'Goal: find issues before tomorrow\'s release',
+      'Output is a short plan you can share with the team'
+    ],
+    starter: 'Plan an exploratory session for the search feature.',
+    reference:
+`You are a QA tester running a 1-hour exploratory session.
+
+Context: A new search bar on the homepage supports keyword search and basic filters (price, category). Release is tomorrow.
+
+Task: Create a short exploratory test plan covering: areas to focus on, key risks, test ideas (5–7), and what is out of scope.
+
+Output as a markdown checklist with these sections: Goal, Areas to test, Test ideas, Risks, Time-box.
+
+Constraints: Keep it under one page. No scripted test cases — these are exploration ideas.`,
+    criteria: [
+      { id: 'role', label: 'Tester / exploratory role', hint: 'Frame as a tester or exploratory tester.',
+        test: p => /\b(qa|tester|exploratory|engineer|you\s*are)\b/i.test(p) },
+      { id: 'risk', label: 'Risk or focus areas', hint: 'Ask the model to identify risks or focus areas.',
+        test: p => /\b(risk|focus|area|priorit|concern|important)\b/i.test(p) },
+      { id: 'ideas', label: 'Test ideas requested', hint: 'Ask for test ideas, scenarios, or things to try.',
+        test: p => /\b(test\s*ideas?|ideas?|scenarios?|things\s*to\s*(try|test)|cover)\b/i.test(p) },
+      { id: 'timebox', label: 'Time mentioned', hint: 'Reference the 1-hour time-box.',
+        test: p => /\b(\d+\s*(minutes?|mins?|hours?|hrs?)|time[-\s]*box|timebox|within|under)\b/i.test(p) },
+      { id: 'format', label: 'Output format', hint: 'Ask for a list, checklist, or sections.',
+        test: p => /\b(list|checklist|sections?|markdown|format|plan|output)\b/i.test(p) }
+    ]
+  },
+  {
+    id: 'uat',
+    level: 'medium',
+    title: '📋 UAT scenarios from acceptance criteria',
+    scenario: 'Convert simple acceptance criteria into UAT scenarios for business stakeholders.',
+    facts: [
+      'Feature: "Add to Cart" button on a product page',
+      'AC1: Clicking "Add to Cart" adds the product and shows a confirmation',
+      'AC2: The cart icon updates with the new item count',
+      'AC3: If out of stock, the button is disabled',
+      'Audience: business stakeholders (non-technical) doing UAT'
+    ],
+    starter: 'Write UAT scenarios for "Add to Cart".',
+    reference:
+`You are a QA analyst writing UAT scenarios for non-technical business stakeholders.
+
+Context: Feature is the "Add to Cart" button on a product page.
+Acceptance criteria:
+- AC1: Clicking "Add to Cart" adds the product and shows a confirmation.
+- AC2: The cart icon updates with the new item count.
+- AC3: If the product is out of stock, the button is disabled.
+
+Task: Write UAT scenarios that cover all 3 ACs. Include positive and negative cases.
+
+Output as Given/When/Then steps in plain business language. Tag each scenario with the AC it covers.
+
+Constraints: No technical jargon. Keep to 5–7 scenarios total.`,
+    criteria: [
+      { id: 'audience', label: 'Audience aware', hint: 'Mention business / non-technical / stakeholders.',
+        test: p => /\b(uat|business|stakeholder|non[-\s]*technical|analyst|user)\b/i.test(p) },
+      { id: 'ac', label: 'Acceptance criteria covered', hint: 'Tell the model to cover the ACs.',
+        test: p => /(acceptance\s*criteri|\bac\d?\b|every\s*ac|each\s*ac|all\s*ac|cover)/i.test(p) },
+      { id: 'gherkin', label: 'Given/When/Then or steps', hint: 'Specify Gherkin or step-based format.',
+        test: p => /\b(given|when|then|gherkin|scenario|steps?)\b/i.test(p) },
+      { id: 'pos_neg', label: 'Positive + negative paths', hint: 'Cover both happy and unhappy paths.',
+        test: p => /\b(positive|happy|valid)\b/i.test(p) && /\b(negative|invalid|error|out\s*of\s*stock|unhappy)\b/i.test(p) },
+      { id: 'plain', label: 'Plain language constraint', hint: 'No jargon — written for business users.',
+        test: p => /(plain|business\s*language|no\s*jargon|no\s*technical|simple\s*language|natural)/i.test(p) }
+    ]
+  },
+  {
+    id: 'smoke',
+    level: 'easy',
+    title: '✅ Smoke test list',
+    scenario: 'Pick a small set of smoke tests to run before each release of an online store.',
+    facts: [
+      'Site: a basic online clothing store',
+      'Key flows: browse, search, add to cart, checkout, login',
+      'Goal: catch obvious breakage in 15 minutes or less',
+      'Will be run manually by a QA team member'
+    ],
+    starter: 'Give me a smoke test list for the store.',
+    reference:
+`You are a QA engineer building a smoke test list for an online clothing store.
+
+Context: Key flows are browse, search, add to cart, checkout, and login. The smoke run must finish in under 15 minutes and is performed manually.
+
+Task: List the top 5–7 smoke tests, each focused on a single critical user journey. For each test, include: name, steps in 1–2 lines, expected result, and why it matters.
+
+Output as a markdown table with columns: Test | Steps | Expected | Why critical.
+
+Constraints: No edge cases — only happy-path checks of must-work flows. Keep total time under 15 minutes.`,
+    criteria: [
+      { id: 'role', label: 'QA / engineer role', hint: 'Frame as a QA building a smoke list.',
+        test: p => /\b(qa|tester|engineer|smoke|you\s*are)\b/i.test(p) },
+      { id: 'critical', label: 'Critical / key flows', hint: 'Focus on critical or key user flows.',
+        test: p => /\b(critical|key|main|important|must|core|priority)\b/i.test(p) },
+      { id: 'count', label: 'Reasonable count', hint: 'Cap the list (e.g., 5–7 tests).',
+        test: p => /\d/.test(p) && /\b(tests?|cases?|checks?|items?|smoke|scenarios?|list)\b/i.test(p) || /\b(short\s*list|small\s*set|handful|few)\b/i.test(p) },
+      { id: 'time', label: 'Time constraint', hint: 'Reference the 15-minute budget.',
+        test: p => /\b(\d+\s*(minutes?|mins?|hours?|hrs?)|under\s*\d+|within\s*\d+|quick|fast|short\s*time)\b/i.test(p) },
+      { id: 'format', label: 'Output format', hint: 'Ask for a table, list, or checklist.',
+        test: p => /\b(table|list|checklist|markdown|columns?|format|output)\b/i.test(p) }
+    ]
+  }
+];
+
+// ============================================================
+// STATE (persisted in localStorage)
+// ============================================================
+const STORAGE_PREFIX = 'promptlab.';
+const labState = {
+  current: 0,
+  attempts: parseInt(localStorage.getItem(STORAGE_PREFIX + 'attempts') || '0', 10),
+  solved: new Set(JSON.parse(localStorage.getItem(STORAGE_PREFIX + 'solved') || '[]')),
+  best: parseInt(localStorage.getItem(STORAGE_PREFIX + 'best') || '0', 10)
+};
+
+// ============================================================
+// RENDER
+// ============================================================
+function renderTabs() {
+  const wrap = document.getElementById('challenge-tabs');
+  wrap.innerHTML = '';
+  CHALLENGES.forEach((c, i) => {
+    const btn = document.createElement('button');
+    const level = c.level || 'medium';
+    btn.innerHTML = c.title +
+      ` <span class="level ${level}">${level}</span>` +
+      (labState.solved.has(c.id) ? ' <span class="check">✓</span>' : '');
+    if (i === labState.current) btn.classList.add('active');
+    btn.onclick = () => { labState.current = i; renderChallenge(); };
+    wrap.appendChild(btn);
+  });
+}
+
+function renderChallenge() {
+  const c = CHALLENGES[labState.current];
+  document.getElementById('ch-title').textContent = c.scenario;
+  const factsHtml = '<strong>What you\'re testing</strong><ul>' +
+    c.facts.map(f => '<li>' + f + '</li>').join('') + '</ul>';
+  document.getElementById('ch-facts').innerHTML = factsHtml;
+  document.getElementById('prompt-input').value = '';
+  document.getElementById('feedback').classList.add('hidden');
+  document.getElementById('feedback').innerHTML = '';
+  renderTabs();
+  renderScoreboard();
+}
+
+function renderScoreboard() {
+  document.getElementById('lab-solved').textContent = labState.solved.size + '/' + CHALLENGES.length;
+  document.getElementById('lab-best').textContent = labState.best + '%';
+  document.getElementById('lab-attempts').textContent = labState.attempts;
+}
+
+// ============================================================
+// ACTIONS
+// ============================================================
+function loadStarter() {
+  const c = CHALLENGES[labState.current];
+  document.getElementById('prompt-input').value = c.starter;
+}
+
+function resetChallenge() {
+  document.getElementById('prompt-input').value = '';
+  document.getElementById('feedback').classList.add('hidden');
+}
+
+function evaluatePrompt() {
+  const c = CHALLENGES[labState.current];
+  const text = document.getElementById('prompt-input').value;
+
+  if (text.trim().length < 10) {
+    const fb = document.getElementById('feedback');
+    fb.classList.remove('hidden');
+    fb.innerHTML = `
+      <div class="feedback-heading">
+        <span>📊 Evaluation</span>
+        <button onclick="document.getElementById('feedback').classList.add('hidden')">Close</button>
+      </div>
+      <p style="color:var(--bad); margin:0;">Write a prompt first (at least a sentence).</p>`;
+    fb.classList.remove('flash');
+    void fb.offsetWidth;
+    fb.classList.add('flash');
+    setTimeout(() => fb.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+    return;
+  }
+
+  labState.attempts++;
+  localStorage.setItem(STORAGE_PREFIX + 'attempts', String(labState.attempts));
+
+  // Run criteria
+  const results = c.criteria.map(crit => ({
+    ...crit,
+    pass: !!crit.test(text)
+  }));
+  const passed = results.filter(r => r.pass).length;
+  const total = results.length;
+  const pct = Math.round((passed / total) * 100);
+
+  // Length sanity check
+  const wordCount = text.trim().split(/\s+/).length;
+  const lengthPenalty = wordCount < 25 ? 0.7 : (wordCount < 40 ? 0.9 : 1.0);
+  const adjusted = Math.round(pct * lengthPenalty);
+
+  // Track stats
+  if (adjusted > labState.best) {
+    labState.best = adjusted;
+    localStorage.setItem(STORAGE_PREFIX + 'best', String(adjusted));
+  }
+  if (adjusted >= 80) {
+    labState.solved.add(c.id);
+    localStorage.setItem(STORAGE_PREFIX + 'solved', JSON.stringify([...labState.solved]));
+  }
+
+  // Verdict
+  let verdict = '';
+  if (adjusted >= 90) verdict = '🏆 Excellent — production-ready prompt.';
+  else if (adjusted >= 80) verdict = '✅ Strong — solved! All major components present.';
+  else if (adjusted >= 60) verdict = '🔧 Good start — fill the missing pieces below.';
+  else if (adjusted >= 40) verdict = '⚠️ Partial — major components missing.';
+  else verdict = '❌ Too vague — review the 6 components and try again.';
+
+  let html = `
+    <div class="feedback-heading">
+      <span>📊 Evaluation</span>
+      <button onclick="document.getElementById('feedback').classList.add('hidden')">Close</button>
+    </div>
+    <div class="score-headline">
+      <div>
+        <div class="pct">${adjusted}%</div>
+        <div class="verdict">${verdict}</div>
+      </div>
+      <div style="font-size:0.85rem; color:var(--text-dim); text-align:right;">
+        ${passed} / ${total} criteria<br>
+        ${wordCount} words${lengthPenalty < 1 ? ' <span style="color:var(--bad)">(length penalty)</span>' : ''}
+      </div>
+    </div>
+    <div class="score-bar"><div style="width:${adjusted}%"></div></div>
+    <ul class="checks">
+  `;
+  results.forEach(r => {
+    html += `<li class="${r.pass ? 'pass' : 'fail'}">
+      <strong>${r.label}</strong>
+      ${!r.pass ? '<span class="hint">' + r.hint + '</span>' : ''}
+    </li>`;
+  });
+  html += `</ul>
+    <details class="reference">
+      <summary>📘 Show reference prompt</summary>
+      <pre><code>${escapeHtml(c.reference)}</code></pre>
+    </details>`;
+
+  const fb = document.getElementById('feedback');
+  fb.innerHTML = html;
+  fb.classList.remove('hidden');
+  fb.classList.remove('flash');
+  void fb.offsetWidth;
+  fb.classList.add('flash');
+  renderTabs();
+  renderScoreboard();
+  setTimeout(() => fb.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+}
+
+function escapeHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ============================================================
+// LAUNCH EXTERNAL TOOLS
+// ============================================================
+const EXTERNAL_TOOLS = {
+  aistudio: { url: 'https://aistudio.google.com/prompts/new_chat', label: 'AI Studio' },
+  lmarena:  { url: 'https://lmarena.ai/?mode=side-by-side',          label: 'LMSYS Arena' }
+};
+function launchExternal(toolKey, btn) {
+  const text = document.getElementById('prompt-input').value.trim();
+  const tool = EXTERNAL_TOOLS[toolKey];
+  if (!text) {
+    showToast('Write a prompt first');
+    return;
+  }
+  const opener = () => window.open(tool.url, '_blank', 'noopener');
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => {
+      showToast('Prompt copied — paste into ' + tool.label);
+      btn.classList.add('copied');
+      const orig = btn.innerHTML;
+      btn.innerHTML = '✓ Copied — opening...';
+      setTimeout(() => {
+        btn.classList.remove('copied');
+        btn.innerHTML = orig;
+      }, 2000);
+      opener();
+    }).catch(() => {
+      legacyCopy(text);
+      showToast('Prompt copied — paste into ' + tool.label);
+      opener();
+    });
+  } else {
+    legacyCopy(text);
+    showToast('Prompt copied — paste into ' + tool.label);
+    opener();
+  }
+}
+function legacyCopy(text) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.select();
+  try { document.execCommand('copy'); } catch (e) {}
+  document.body.removeChild(ta);
+}
+let toastTimer;
+function showToast(msg) {
+  let t = document.getElementById('toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'toast';
+    t.className = 'toast';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2400);
+}
+
+// ============================================================
+// INIT
+// ============================================================
+renderChallenge();
+</script>
+</body>
+</html>
