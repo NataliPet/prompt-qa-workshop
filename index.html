@@ -254,7 +254,7 @@
   }
   ol.principles b { color: var(--accent); }
 
-  /* ---------- Technique grid ---------- */
+  /* ---------- Technique grid (legacy) ---------- */
   .tech-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -270,6 +270,66 @@
   }
   .tech b { color: var(--accent-2); display: block; margin-bottom: 4px; }
   .tech .ex { color: var(--text-dim); font-size: 0.88em; font-style: italic; margin-top: 6px; }
+
+  /* ---------- Technique list (ISTQB 3 core techniques) ---------- */
+  .tech-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 16px;
+  }
+  .tech-item {
+    display: flex;
+    gap: 18px;
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent-2);
+    border-radius: 10px;
+    padding: 18px 22px;
+  }
+  .tech-item .tech-num {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--accent-2);
+    color: #1a0e00;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 1.2rem;
+  }
+  .tech-item .tech-body { flex: 1; }
+  .tech-item h3 { margin: 0 0 6px; color: var(--accent-2); font-size: 1.1rem; }
+  .tech-item p { margin: 0 0 8px; font-size: 0.92rem; }
+  .tech-item ul { margin: 6px 0 0; padding-left: 20px; font-size: 0.9rem; }
+  .tech-item ul li { margin-bottom: 4px; color: var(--text); }
+  .tech-item ul li strong { color: var(--accent-2); }
+  .variants {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-top: 10px;
+  }
+  @media (max-width: 720px) { .variants { grid-template-columns: 1fr; } }
+  .variants .variant {
+    background: var(--bg-elev-2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 0.85rem;
+  }
+  .variants .variant strong {
+    display: block;
+    color: var(--accent);
+    margin-bottom: 4px;
+    font-size: 0.9rem;
+  }
+  .variants .variant span {
+    color: var(--text-dim);
+    line-height: 1.4;
+  }
 
   /* ---------- Use cases table ---------- */
   table.uc {
@@ -876,7 +936,7 @@
   <a href="#lab">Lab</a>
   <a href="#realmodel">Real model</a>
   <a href="#exercises">Exercises</a>
-  <a href="#takeaways">Take home</a>
+  <a href="#takeaways">Resources</a>
 </nav>
 
 <main>
@@ -1011,37 +1071,58 @@ ID | Title | Preconditions | Steps | Expected Result | Priority | AC covered</co
   <!-- ===== 4. Techniques ===== -->
   <section id="techniques">
     <span class="num">04 · Techniques</span>
-    <h2>Techniques in your toolbox</h2>
-    <div class="tech-grid">
-      <div class="tech">
-        <b>Zero-shot</b>
-        Just ask. Fast for simple tasks.
-        <div class="ex">"List edge cases for a date picker."</div>
+    <h2>Core prompting techniques</h2>
+    <span class="source-badge">Source: ISTQB® CT-GenAI v1.1 — section 2.1.2</span>
+    <p>The CT-GenAI syllabus identifies <strong>three core prompting techniques</strong> for software testing tasks. They are used in combination with the 6-component prompt structure from the Anatomy section.</p>
+
+    <div class="tech-list">
+      <div class="tech-item">
+        <div class="tech-num">1</div>
+        <div class="tech-body">
+          <h3>Prompt chaining</h3>
+          <p>Break a task into a series of intermediate steps — multiple prompts. The result of each step is checked (manually or automatically) and refined before feeding it into the next prompt.</p>
+          <ul>
+            <li><strong>Why it works:</strong> each response informs the next prompt, so accuracy increases and errors don't compound.</li>
+            <li><strong>Best for:</strong> complex test tasks that decompose naturally — e.g., requirements → test conditions → test cases → test data.</li>
+            <li><strong>Bonus:</strong> allows dynamic interaction with the LLM throughout the test process.</li>
+          </ul>
+        </div>
       </div>
-      <div class="tech">
-        <b>Few-shot</b>
-        Provide 2–5 examples of input → desired output.
-        <div class="ex">Best for consistent format across many requests.</div>
+
+      <div class="tech-item">
+        <div class="tech-num">2</div>
+        <div class="tech-body">
+          <h3>Few-shot prompting</h3>
+          <p>Provide the LLM with examples in the prompt. The number of examples gives the technique its name and shapes the model's response behaviour.</p>
+          <div class="variants">
+            <div class="variant">
+              <strong>Zero-shot</strong>
+              <span>No example. Relies on the model's pre-existing knowledge.</span>
+            </div>
+            <div class="variant">
+              <strong>One-shot</strong>
+              <span>A single example demonstrates the expected result for a given input.</span>
+            </div>
+            <div class="variant">
+              <strong>Few-shot</strong>
+              <span>Two or more examples consolidate the desired behaviour.</span>
+            </div>
+          </div>
+          <p style="margin-top:14px;"><strong>Best for:</strong> tasks where examples illustrate the required behaviour better than description, helping the model generalise reliably and produce consistent output.</p>
+        </div>
       </div>
-      <div class="tech">
-        <b>Chain-of-thought</b>
-        "Think step by step before answering."
-        <div class="ex">Reduces logic errors in test design and triage.</div>
-      </div>
-      <div class="tech">
-        <b>Role prompting</b>
-        "Act as a security tester / accessibility auditor."
-        <div class="ex">Shifts the lens, surfaces different defects.</div>
-      </div>
-      <div class="tech">
-        <b>Constrained output</b>
-        Force JSON / schema / Gherkin.
-        <div class="ex">Pipeline-friendly, machine-parseable.</div>
-      </div>
-      <div class="tech">
-        <b>Self-critique</b>
-        "Now review your answer for missing cases."
-        <div class="ex">Two-pass = better coverage in practice.</div>
+
+      <div class="tech-item">
+        <div class="tech-num">3</div>
+        <div class="tech-body">
+          <h3>Meta prompting</h3>
+          <p>Use the LLM itself to generate or refine prompts. In an iterative cycle the model produces a prompt, the tester evaluates and refines it, and the improved prompt is then used for the actual task.</p>
+          <ul>
+            <li><strong>Why it works:</strong> takes advantage of the LLM's own knowledge about effective prompts; reduces manual prompt-design effort.</li>
+            <li><strong>Best for:</strong> when you're unsure how to phrase a prompt — co-create it with the model.</li>
+            <li><strong>A form of pairing:</strong> tester and AI work together interactively toward a shared goal — pair-prompting, pair-programming, pair-testing.</li>
+          </ul>
+        </div>
       </div>
     </div>
   </section>
@@ -1282,24 +1363,6 @@ ACs:
       </div>
     </div>
 
-    <div class="mapping">
-      <h3>ISTQB CT-GenAI components → AI Studio UI</h3>
-      <p style="font-size:0.9rem; color:var(--text-dim); margin-top:0;">Drop each of the six components into the right field — the model will respect the structure.</p>
-      <table>
-        <thead>
-          <tr><th>ISTQB component</th><th>AI Studio field</th><th>Why it matters</th></tr>
-        </thead>
-        <tbody>
-          <tr><td>1. Role</td><td>System instructions</td><td>Persists across the whole conversation; sets persona globally</td></tr>
-          <tr><td>2. Context</td><td>System instructions <em>or</em> top of prompt</td><td>Test object, environment, prior failures — anchors the model</td></tr>
-          <tr><td>3. Instruction</td><td>Main prompt area</td><td>The directive — clear, imperative, verb-first</td></tr>
-          <tr><td>4. Input data</td><td>Main prompt area (or attached files)</td><td>User stories, ACs, screenshots, code, examples — drives accuracy</td></tr>
-          <tr><td>5. Constraints</td><td>System instructions + temperature slider</td><td>Lower temp (0–0.3) for determinism; instructions for restrictions</td></tr>
-          <tr><td>6. Output format</td><td>Structured output toggle (JSON schema)</td><td>Forces machine-readable output for pipelines</td></tr>
-        </tbody>
-      </table>
-    </div>
-
     <h3>Suggested workflow — the 5-step practice loop</h3>
     <ol class="workflow">
       <li><b>Draft in the Lab.</b> Write your prompt for one of the 4 challenges. Get it to <strong>80%+</strong>.</li>
@@ -1375,20 +1438,10 @@ Output: valid JSON only, no commentary.</code></pre>
     </details>
   </section>
 
-  <!-- ===== 12. Take home ===== -->
+  <!-- ===== 12. Resources ===== -->
   <section id="takeaways">
-    <span class="num">12 · Take home</span>
-    <h2>Take this home</h2>
-    <ul class="checklist">
-      <li>Build every prompt from the six ISTQB CT-GenAI components: <strong>Role · Context · Instruction · Input data · Constraints · Output format</strong>.</li>
-      <li>Show one good example before asking for many.</li>
-      <li>Force structured output (JSON / Gherkin) for anything pipeline-bound.</li>
-      <li>Always do a self-critique pass for coverage.</li>
-      <li>Never ship LLM-written assertions unread.</li>
-      <li>Version-control prompts alongside the tests they generate.</li>
-    </ul>
-
-    <h3>Further reading</h3>
+    <span class="num">12 · Resources</span>
+    <h2>Further reading</h2>
     <div class="resources">
       <a href="https://www.promptingguide.ai/" target="_blank" rel="noopener">
         <span class="domain">promptingguide.ai</span>
