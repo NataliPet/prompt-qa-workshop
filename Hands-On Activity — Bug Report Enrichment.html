@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hands-On Activity — Bug Report Enrichment</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', system-ui, sans-serif; background: #1a1a2e; color: #e0e0e0; padding: 40px; max-width: 1000px; margin: 0 auto; }
+h1 { color: #7ecfff; margin-bottom: 0.5em; }
+h2 { color: #fff; margin: 1.5em 0 0.5em; }
+h3 { color: #a0d8ff; margin: 1em 0 0.3em; }
+p { line-height: 1.6; margin-bottom: 0.8em; }
+.note-card { background: #16213e; border: 1px solid rgba(126,207,255,0.2); border-radius: 12px; padding: 24px; margin: 16px 0; position: relative; }
+.note-card blockquote { border-left: 3px solid #7ecfff; padding: 12px 16px; font-style: italic; color: #ccc; }
+.note-label { position: absolute; top: -10px; left: 16px; background: #7ecfff; color: #0f0f1a; padding: 2px 12px; border-radius: 4px; font-weight: 700; font-size: 0.85em; }
+.copy-btn { background: rgba(126,207,255,0.15); border: 1px solid #7ecfff; color: #7ecfff; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.9em; margin-top: 12px; transition: all 0.2s; }
+.copy-btn:hover { background: #7ecfff; color: #0f0f1a; }
+.prompt-box { background: #0f0f1a; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 20px; font-family: monospace; font-size: 0.9em; white-space: pre-wrap; line-height: 1.5; margin: 1em 0; max-height: 400px; overflow-y: auto; }
+.steps { background: rgba(105,219,124,0.05); border: 1px solid rgba(105,219,124,0.2); border-radius: 12px; padding: 24px; margin: 1em 0; }
+.steps ol { margin-left: 1.5em; }
+.steps li { margin-bottom: 0.6em; font-size: 1.1em; }
+.checklist { list-style: none; margin: 1em 0; }
+.checklist li { padding: 8px 0; font-size: 1.05em; }
+.checklist li::before { content: '☐ '; color: #7ecfff; }
+.timer-section { text-align: center; margin: 2em 0; padding: 30px; background: rgba(126,207,255,0.05); border-radius: 12px; }
+.timer-display { font-size: 5em; font-weight: bold; color: #7ecfff; font-variant-numeric: tabular-nums; }
+.timer-btn { padding: 12px 32px; border-radius: 8px; border: none; font-size: 1.1em; cursor: pointer; font-weight: 600; margin: 8px; }
+.btn-start { background: #69db7c; color: #0f0f1a; }
+.btn-reset { background: #ff6b6b; color: #fff; }
+.tab-bar { display: flex; gap: 4px; margin-bottom: -1px; position: relative; z-index: 1; }
+.tab { padding: 10px 20px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-bottom: none; border-radius: 8px 8px 0 0; cursor: pointer; color: #aaa; transition: all 0.2s; }
+.tab.active { background: #16213e; color: #7ecfff; border-color: rgba(126,207,255,0.3); }
+.tab-content { display: none; border: 1px solid rgba(255,255,255,0.1); border-radius: 0 8px 8px 8px; padding: 24px; background: #16213e; }
+.tab-content.active { display: block; }
+</style>
+</head>
+<body>
+
+<h1>🧪 Hands-On Activity: Bug Report Enrichment</h1>
+
+<div class="steps">
+  <h3>Your Task</h3>
+  <ol>
+    <li>📝 Pick a bug note below (or use your assigned one)</li>
+    <li>🤖 Copy the prompt template → paste into your AI tool</li>
+    <li>📋 Copy your bug note → paste where it says <code>[PASTE RAW NOTE HERE]</code></li>
+    <li>🔍 Review the AI output using the checklist below</li>
+    <li>💬 Be ready to share <strong>one finding</strong> with the group</li>
+  </ol>
+</div>
+
+<div class="timer-section">
+  <div class="timer-display" id="timer">10:00</div>
+  <div>
+    <button class="timer-btn btn-start" onclick="startTimer()">▶ Start Timer</button>
+    <button class="timer-btn btn-reset" onclick="resetTimer()">↺ Reset</button>
+  </div>
+</div>
+
+<h2>📋 Prompt Template</h2>
+<p>Copy this entire block into your AI tool:</p>
+<div class="prompt-box" id="promptText">You are a QA engineer assistant helping to write clear, structured bug reports for a video streaming service.
+
+Given the following raw bug note, produce a complete bug report using this structure:
+
+- Title: [Short, specific, action-oriented]
+- Environment: [Device / OS / Browser / App version / Test phase]
+- Severity: [Critical / High / Medium / Low — with one-line rationale]
+- Priority: [High / Medium / Low]
+- Steps to Reproduce:
+  1.
+  2.
+  3.
+- Expected Result:
+- Actual Result:
+- Additional Notes: [Workarounds, frequency, related tickets if mentioned]
+
+Rules:
+- Do NOT invent steps, environments, or details not present in the raw note
+- If information is missing, mark the field as [MISSING — needs verification]
+- Keep language neutral and technical
+- Do not suggest root cause or assign blame
+
+Raw bug note:
+"""
+[PASTE RAW NOTE HERE]
+"""</div>
+<button class="copy-btn" onclick="copyText('promptText')">📋 Copy Prompt Template</button>
+
+<h2>🐛 Raw Bug Notes</h2>
+<p>Pick one (or use your assigned note):</p>
+
+<div class="tab-bar">
+  <div class="tab active" onclick="showTab(0)">Note A</div>
+  <div class="tab" onclick="showTab(1)">Note B</div>
+  <div class="tab" onclick="showTab(2)">Note C</div>
+  <div class="tab" onclick="showTab(3)">Note D</div>
+</div>
+
+<div class="tab-content active" id="tab0">
+  <div class="note-card">
+    <div class="note-label">Note A — Playback</div>
+    <blockquote id="noteA">video freezes after skipping, happens on mobile, tried a few times and it keeps doing it, pretty annoying, affects the whole viewing experience</blockquote>
+    <button class="copy-btn" onclick="copyText('noteA')">📋 Copy Note A</button>
+  </div>
+</div>
+<div class="tab-content" id="tab1">
+  <div class="note-card">
+    <div class="note-label">Note B — Login</div>
+    <blockquote id="noteB">user can't log in sometimes, error message appears but it's not clear, happens on older devices maybe, not always reproducible</blockquote>
+    <button class="copy-btn" onclick="copyText('noteB')">📋 Copy Note B</button>
+  </div>
+</div>
+<div class="tab-content" id="tab2">
+  <div class="note-card">
+    <div class="note-label">Note C — Performance</div>
+    <blockquote id="noteC">load time is very slow during RC run, way longer than usual, probably a backend issue, noticed it in the afternoon session</blockquote>
+    <button class="copy-btn" onclick="copyText('noteC')">📋 Copy Note C</button>
+  </div>
+</div>
+<div class="tab-content" id="tab3">
+  <div class="note-card">
+    <div class="note-label">Note D — Subtitles</div>
+    <blockquote id="noteD">subtitles are out of sync on a specific show, maybe only that one, wasn't like this before the last build</blockquote>
+    <button class="copy-btn" onclick="copyText('noteD')">📋 Copy Note D</button>
+  </div>
+</div>
+
+<h2>✅ Review Checklist</h2>
+<p>After you get the AI output, check these:</p>
+<ul class="checklist">
+  <li>Did the AI fill in environment details you didn't provide? (hallucination!)</li>
+  <li>Are the steps to reproduce accurate to what you described?</li>
+  <li>Did it correctly mark missing fields as [MISSING]?</li>
+  <li>Is the severity suggestion reasonable? Would you change it?</li>
+  <li>Did it avoid suggesting root cause?</li>
+  <li>Is the language neutral and technical?</li>
+  <li>Could you submit this as-is, or does it need editing?</li>
+</ul>
+
+<h2>💬 Share With the Group</h2>
+<p>Be ready to share:</p>
+<ul style="margin-left:1.5em;">
+  <li><strong>One thing</strong> the AI did well</li>
+  <li><strong>One thing</strong> you had to fix or flag</li>
+</ul>
+
+<script>
+// Tabs
+function showTab(n) {
+  document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', i === n));
+  document.querySelectorAll('.tab-content').forEach((t, i) => t.classList.toggle('active', i === n));
+}
+
+// Copy
+function copyText(id) {
+  const el = document.getElementById(id);
+  const text = el.textContent || el.innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = el.parentElement.querySelector('.copy-btn') || el.nextElementSibling;
+    const orig = btn.textContent;
+    btn.textContent = '✅ Copied!';
+    setTimeout(() => btn.textContent = orig, 2000);
+  });
+}
+
+// Timer
+let timerInterval = null, timerSeconds = 600;
+function updateTimer() {
+  const m = Math.floor(timerSeconds / 60);
+  const s = timerSeconds % 60;
+  const el = document.getElementById('timer');
+  el.textContent = `${m}:${s.toString().padStart(2, '0')}`;
+  el.style.color = timerSeconds <= 60 ? '#ff6b6b' : '#7ecfff';
+}
+function startTimer() {
+  if (timerInterval) return;
+  timerInterval = setInterval(() => {
+    if (timerSeconds > 0) { timerSeconds--; updateTimer(); }
+    else { clearInterval(timerInterval); timerInterval = null; document.getElementById('timer').textContent = "⏰ Time's up!"; }
+  }, 1000);
+}
+function resetTimer() {
+  clearInterval(timerInterval); timerInterval = null;
+  timerSeconds = 600; updateTimer();
+}
+</script>
+</body>
+</html>
