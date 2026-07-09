@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exercise: Spot the Re-identification Risk</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #1a1a2e; color: #eee; min-height: 100vh; padding: 40px; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        h1 { font-size: 2.2em; color: #4fc3f7; margin-bottom: 10px; }
+        h2 { font-size: 1.6em; color: #81d4fa; margin-bottom: 12px; margin-top: 30px; }
+        h3 { font-size: 1.2em; color: #b3e5fc; margin-bottom: 10px; }
+        p, li { font-size: 1.05em; line-height: 1.7; margin-bottom: 10px; }
+        ul { padding-left: 24px; }
+        .subtitle { color: #888; font-size: 1.1em; margin-bottom: 30px; }
+        .highlight { color: #ffab40; font-weight: bold; }
+        .warning { color: #ef5350; font-weight: bold; }
+        .success { color: #66bb6a; font-weight: bold; }
+
+        .section { background: #16213e; border-radius: 12px; padding: 30px; margin: 24px 0; box-shadow: 0 8px 30px rgba(0,0,0,0.3); }
+        .code-block { background: #0d1117; padding: 16px; border-radius: 8px; font-family: monospace; font-size: 0.95em; overflow-x: auto; margin: 16px 0; white-space: pre-wrap; line-height: 1.6; }
+        .exercise-box { background: #1a237e; border: 2px solid #5c6bc0; border-radius: 12px; padding: 24px; margin: 20px 0; }
+        .scenario-card { background: #263238; border-left: 4px solid #4fc3f7; padding: 16px; margin: 12px 0; border-radius: 0 8px 8px 0; }
+
+        .interactive-input { width: 100%; padding: 14px; margin: 10px 0; background: #263238; border: 2px solid #455a64; border-radius: 8px; color: #eee; font-size: 1em; font-family: inherit; resize: vertical; }
+        .interactive-input:focus { outline: none; border-color: #4fc3f7; }
+
+        .btn { padding: 12px 28px; border: none; border-radius: 8px; background: #5c6bc0; color: white; font-size: 1em; cursor: pointer; margin-top: 12px; margin-right: 10px; transition: all 0.3s; }
+        .btn:hover { background: #7986cb; transform: translateY(-2px); }
+
+
+        .risk-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 0.85em; font-weight: bold; margin-left: 8px; }
+        .risk-high { background: #b71c1c; color: #ef9a9a; }
+        .risk-medium { background: #e65100; color: #ffcc80; }
+        .risk-low { background: #1b5e20; color: #a5d6a7; }
+
+        table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+        th, td { padding: 12px 14px; text-align: left; border: 1px solid #455a64; }
+        th { background: #1a237e; color: #9fa8da; }
+        td { background: #263238; }
+
+        .header-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .back-link { color: #4fc3f7; text-decoration: none; font-size: 0.95em; }
+        .back-link:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header-bar">
+        <div>
+            <h1>🕵️ Exercise: Spot the Re-identification Risk</h1>
+            <p class="subtitle">Data Anonymization & Pseudonymization Workshop</p>
+        </div>
+        <a href="#" class="back-link" style="display:none;"></a>
+    </div>
+
+    <!-- INTRODUCTION -->
+    <div class="section">
+        <h2>📖 Background</h2>
+        <p>Re-identification is the process of matching anonymized data back to specific individuals. Even when direct identifiers (names, emails, SSNs) are removed, combinations of <span class="highlight">quasi-identifiers</span> can uniquely identify people.</p>
+        <div class="scenario-card">
+            <h3>Key Concept: Quasi-identifiers</h3>
+            <p>Attributes that are not unique on their own but become identifying when combined: age, gender, ZIP code, job title, location, dates, etc.</p>
+            <p style="margin-top:8px;"><span class="warning">Fact:</span> Research shows that 87% of the US population can be uniquely identified by just ZIP code + date of birth + gender (Sweeney, 2000).</p>
+        </div>
+    </div>
+
+    <!-- DATASET 1 -->
+    <div class="section">
+        <h2>🗂️ Dataset 1: Employee Health Survey</h2>
+        <p>This dataset was "anonymized" by removing names and employee IDs before sharing with an external health analytics company:</p>
+        <div class="code-block">
+Record 1: { department: "Engineering", age_range: "30-35", gender: "M", condition: "Diabetes",    office: "Building A" }
+Record 2: { department: "Engineering", age_range: "30-35", gender: "M", condition: "Hypertension", office: "Building A" }
+Record 3: { department: "Engineering", age_range: "30-35", gender: "F", condition: "Asthma",       office: "Building A" }
+Record 4: { department: "Legal",       age_range: "50-55", gender: "F", condition: "Arthritis",    office: "Building B" }
+Record 5: { department: "CEO Office",  age_range: "45-50", gender: "M", condition: "Heart Disease", office: "Building C" }
+Record 6: { department: "Marketing",   age_range: "25-30", gender: "M", condition: "Anxiety",      office: "Building A" }
+        </div>
+
+        <div class="exercise-box">
+            <h3>🎯 Task: Analyze each record for re-identification risk</h3>
+            <p>Consider: How many people likely match each combination of quasi-identifiers? Could external data (org chart, LinkedIn) help identify someone?</p>
+            <textarea class="interactive-input" rows="6" id="dataset1-answer" placeholder="Analyze each record:&#10;Record 1: Risk level... because...&#10;Record 5: Risk level... because..."></textarea>
+        </div>
+    </div>
+
+    <!-- DATASET 2 -->
+    <div class="section">
+        <h2>🗂️ Dataset 2: Customer Purchase Data</h2>
+        <p>An e-commerce company shared this "anonymized" purchase dataset with a marketing research partner:</p>
+        <div class="code-block">
+Record A: { city: "New York",    purchase_date: "2024-03-15", category: "Electronics", amount: "$1,299", loyalty_tier: "Gold" }
+Record B: { city: "Smallville",  purchase_date: "2024-03-15", category: "Rare Books",  amount: "$4,500", loyalty_tier: "Platinum" }
+Record C: { city: "New York",    purchase_date: "2024-03-16", category: "Clothing",    amount: "$89",    loyalty_tier: "Silver" }
+Record D: { city: "Smallville",  purchase_date: "2024-03-15", category: "Groceries",   amount: "$52",    loyalty_tier: "Bronze" }
+Record E: { city: "Los Angeles", purchase_date: "2024-03-14", category: "Electronics", amount: "$15,000", loyalty_tier: "Platinum" }
+        </div>
+
+        <div class="exercise-box">
+            <h3>🎯 Task: Which records are most vulnerable to re-identification?</h3>
+            <p>Think about: unique combinations, publicly available information, purchase patterns that narrow down individuals.</p>
+            <textarea class="interactive-input" rows="5" id="dataset2-answer" placeholder="Your analysis here..."></textarea>
+        </div>
+    </div>
+
+    <!-- DATASET 3 -->
+    <div class="section">
+        <h2>🗂️ Dataset 3: QA Bug Report Shared with AI</h2>
+        <p>A QA engineer pasted this bug report into Claude to get help debugging. Identify all PII and re-identification risks:</p>
+        <div class="code-block">
+Bug Report #4821 - Payment Processing Failure
+
+Reporter: Anna Kowalski (a.kowalski@internal-team.de)
+Customer affected: Marcus Weber, Premium tier since 2019
+Customer email: m.weber@deutsche-bank.de
+Customer ID: CUS-77291
+
+Steps to reproduce:
+1. Login as customer CUS-77291 (IP: 89.12.45.201, Berlin region)
+2. Navigate to payment settings
+3. Attempt to update card ending in 4921, expiry 03/2026
+4. Error occurs: "Payment method validation failed"
+
+Environment: prod-eu-west-1
+Last successful payment: €2,847.00 on 2024-02-28
+Account manager: Thomas Richter (ext. 4471)
+        </div>
+
+        <div class="exercise-box">
+            <h3>🎯 Task: What PII should have been removed before sharing with AI?</h3>
+            <p>Categorize each item as: Direct PII, Indirect PII, or Business Sensitive. Then rewrite the bug report in a way that's safe to share with AI but still useful for debugging.</p>
+            <textarea class="interactive-input" rows="6" id="dataset3-answer" placeholder="Direct PII found:&#10;1. ...&#10;&#10;Indirect PII found:&#10;1. ...&#10;&#10;Safe rewrite:&#10;..."></textarea>
+        </div>
+    </div>
+
+    <!-- CHALLENGE -->
+    <div class="section">
+        <h2>🏆 Challenge: Fix the Datasets</h2>
+        <p>For each dataset above, propose specific anonymization techniques that would properly protect against re-identification:</p>
+        <div class="exercise-box">
+            <h3>Your Remediation Plan</h3>
+            <textarea class="interactive-input" rows="8" id="challenge-answer" placeholder="Dataset 1 fix: ...&#10;Dataset 2 fix: ...&#10;Dataset 3 fix: ..."></textarea>
+        </div>
+    </div>
+
+    <!-- AI-SPECIFIC: Spot PII Before Prompting -->
+    <div class="section">
+        <h2>🤖 AI Exercise: Spot the PII Before Prompting</h2>
+        <p>You're about to paste the following into <span class="highlight">Claude / Copilot / AWS AI tool</span> for help. Identify ALL personal data that must be anonymized first.</p>
+
+        <div class="exercise-box">
+            <h3>Prompt 1: Debugging a failing test</h3>
+            <div class="code-block">
+"Hey Claude, my integration test is failing. Here's the error:
+
+AssertionError: Expected user 'Stefan Brauer' (customer_id: CUS-88412, 
+email: s.brauer@telekom.de) to have subscription_status='active' but got 'expired'.
+The user signed up on 2022-03-14 from IP 85.214.132.117.
+Their billing address is Friedrichstraße 43, 10117 Berlin.
+
+Here's the test code:
+def test_subscription_renewal():
+    user = get_user('s.brauer@telekom.de')
+    assert user.subscription_status == 'active'"
+            </div>
+            <textarea class="interactive-input" rows="4" id="ai1-answer" placeholder="List all PII that needs to be removed/replaced before sending to AI:&#10;1. ...&#10;2. ..."></textarea>
+        </div>
+
+        <div class="exercise-box">
+            <h3>Prompt 2: Asking AI to analyze test data patterns</h3>
+            <div class="code-block">
+"Can you help me understand why these test accounts keep failing? Here's a sample:
+
+| user_id | name           | email                    | plan     | last_login          | company        |
+|---------|----------------|--------------------------|----------|---------------------|----------------|
+| 4821    | Thomas Müller  | t.mueller@bmw.de         | Premium  | 2024-03-10 09:15:00 | BMW AG         |
+| 4822    | Lisa Wang      | l.wang@siemens.com       | Business | 2024-03-09 14:22:00 | Siemens AG     |
+| 4823    | Marco Rossi    | m.rossi@allianz.de       | Premium  | 2024-03-11 08:45:00 | Allianz SE     |
+| 4824    | Anna Kowalski  | a.kowalski@bosch.com     | Starter  | 2024-02-28 16:30:00 | Robert Bosch   |
+
+They all get 403 errors when accessing the reporting dashboard."
+            </div>
+            <textarea class="interactive-input" rows="4" id="ai2-answer" placeholder="List all PII and sensitive data:&#10;1. ...&#10;Which data is actually NEEDED by the AI to help you?"></textarea>
+        </div>
+
+        <div class="exercise-box">
+            <h3>Prompt 3: Code review assistance</h3>
+            <div class="code-block">
+"Review this authentication handler for security issues:
+
+async function loginUser(req, res) {
+  const { email, password } = req.body;
+  // Test credentials for QA: admin@realclient.com / P@ssw0rd123!
+  const user = await db.query(
+    `SELECT * FROM users WHERE email='${email}' AND company_id='COMP-7291'`
+  );
+  const token = jwt.sign({ userId: user.id }, 'secret-key-prod-2024xK9m');
+  logger.info(`Login successful for ${email} from ${req.ip}`);
+  return res.json({ token, user: { name: user.name, email: user.email }});
+}"
+            </div>
+            <textarea class="interactive-input" rows="4" id="ai3-answer" placeholder="What sensitive data is in this prompt?&#10;What should be redacted vs. what's needed for the AI to do a proper code review?"></textarea>
+        </div>
+    </div>
+
+    <!-- AI-SPECIFIC: Rewrite the Prompt -->
+    <div class="section">
+        <h2>✏️ AI Exercise: Rewrite the Prompt Safely</h2>
+        <p>Take the prompts above and rewrite them so they're <span class="success">safe to send to any AI tool</span> while still getting useful help.</p>
+
+        <div class="exercise-box">
+            <h3>🎯 Rewrite Prompt 1 (Debugging)</h3>
+            <textarea class="interactive-input" rows="5" id="rewrite1-answer" placeholder="Rewrite the debugging prompt without any PII but keeping enough context for the AI to help..."></textarea>
+        </div>
+
+        <div class="exercise-box">
+            <h3>🎯 Rewrite Prompt 2 (Data Analysis)</h3>
+            <textarea class="interactive-input" rows="5" id="rewrite2-answer" placeholder="Rewrite the data analysis prompt with anonymized data..."></textarea>
+        </div>
+    </div>
+
+    <!-- KEY TAKEAWAYS -->
+    <div class="section">
+        <h2>📝 Key Takeaways</h2>
+        <ul>
+            <li>Removing direct identifiers is <span class="warning">NOT sufficient</span> for anonymization</li>
+            <li>Quasi-identifier combinations create fingerprints that can be cross-referenced</li>
+            <li>Small populations (rare jobs, small towns) dramatically increase risk</li>
+            <li>Hashing with predictable inputs is trivially reversible</li>
+            <li>High-value or unusual transactions are inherently identifying</li>
+            <li>Always consider what <strong>external data</strong> an attacker might have access to</li>
+        </ul>
+    </div>
+</div>
+
+</body>
+</html>
